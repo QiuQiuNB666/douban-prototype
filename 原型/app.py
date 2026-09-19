@@ -28,9 +28,10 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
-        self.wfile.write(body)
+        if self.command != "HEAD":
+            self.wfile.write(body)
 
-    def end_headers(self):                                  # 原型改得勤，别让浏览器缓存旧页面
+    def end_headers(self):                                 # 原型改得勤，别让浏览器缓存旧页面
         if not self.path.startswith("/api/"):
             self.send_header("Cache-Control", "no-store")
         super().end_headers()
@@ -39,6 +40,11 @@ class Handler(SimpleHTTPRequestHandler):
         if self.path.split("?")[0] == "/api/ping":
             return self._json(200, {"ok": True})
         super().do_GET()
+
+    def do_HEAD(self):                                      # 交接文档里的健康检查是 curl -I，得答得上
+        if self.path.split("?")[0] == "/api/ping":
+            return self._json(200, {"ok": True})
+        super().do_HEAD()
 
     def do_POST(self):
         if self.path.split("?")[0] != "/api/analyze":
@@ -77,7 +83,7 @@ class Handler(SimpleHTTPRequestHandler):
                 os.unlink(path)                             # 算完就删
 
     def log_message(self, fmt, *args):
-        if "/api/" in (args[0] if args else ""):
+        if "/api/" in str(args[0] if args else ""):         # 404 时 args[0] 是状态码（int），不转 str 会抛 TypeError，连接直接断、什么都不回
             sys.stderr.write("%s %s\n" % (self.log_date_time_string(), fmt % args))
 
 
@@ -94,6 +100,11 @@ def demo():
     post = lambda body, ext: urllib.request.urlopen(urllib.request.Request(base + "/api/analyze", data=body, headers={"X-Ext": ext}, method="POST"))
     r = json.load(post(data, "wav"))
     assert json.load(urllib.request.urlopen(base + "/api/ping"))["ok"]
+    assert urllib.request.urlopen(urllib.request.Request(base + "/api/ping", method="HEAD")).status == 200, "curl -I 健康检查答不上"
+    try:
+        urllib.request.urlopen(base + "/no-such-file"); raise AssertionError("不存在的文件没回 404")
+    except urllib.error.HTTPError as e:
+        assert e.code == 404
     assert r["mode"] == "opening" and 30 <= r["share"] <= 50 and r["deleted"] and len(r["strip"]) == shape.STRIP_BINS, r
     assert set(glob.glob(os.path.join(tempfile.gettempdir(), "tmp*.wav"))) == before, "临时文件没删干净"
     try:
