@@ -59,6 +59,9 @@ button:focus-visible,[role=slider]:focus-visible,summary:focus-visible{outline:3
 .cap{margin:-6px auto 22px;text-align:left}.cap b{color:var(--ink);font-weight:900}
 .seg button,.time-ctl button,.link{position:relative}
 .seg button::after,.time-ctl button::after,.link::after{content:"";position:absolute;inset:-6px 0}
+/* 截图 / 深链模式：#shot=kid-home|kid-guess|kid-reveal|kid-friend|par-remind|par-round2|par-ai|par-trend|par-trust，只留一台手机 */
+.shot{padding:18px 16px 26px;min-height:0}.shot .top,.shot .cap,.shot .foot,.shot .device>h2{display:none}
+.shot-kid #parent,.shot-par #kid{display:none!important}.shot .phone{height:760px}
 @media (max-width:759px){
   .which{display:flex}
   .stage[data-show=kid] #parent,.stage[data-show=parent] #kid{display:none}
@@ -273,7 +276,7 @@ const UI = [
 ];
 const METRIC = {share:"说话占比", monolog_s:"最长独白", minutes:"一起说话的时长", days:"次数"};
 const UNIT = {share:"%", monolog_s:" 秒", minutes:" 分钟", days:" 天"};
-const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const S = {ci:0, kid:{view:"home", si:0, guess:50, from:"home"}, par:{tab:"week", reason:null, next:null, removed:{}}};
 const $ = (s, r=document) => r.querySelector(s), $$ = (s, r=document) => [...r.querySelectorAll(s)];
@@ -303,7 +306,7 @@ function spring({from, to, velocity=0, response=.38, damping=1, onUpdate, onDone
   const k = (2*Math.PI/response)**2, c = 4*Math.PI*damping/response, span = Math.max(1e-6, Math.abs(to-from), Math.abs(velocity)*.1);
   const st = {x:from, v:velocity, cancel(){ cancelAnimationFrame(raf); }};
   let last = performance.now(), raf;
-  const step = t => { const dt = Math.min(.032, (t-last)/1000)/4; last = t;
+  const step = t => { const dt = Math.max(0, Math.min(.032, (t-last)/1000))/4; last = t;   // rAF 的时间戳可能早于上一次取的 now()，时间步不能为负
     for (let i = 0; i < 4; i++){ st.v += (-k*(st.x-to) - c*st.v)*dt; st.x += st.v*dt; }
     if (Math.abs(st.x-to) < span*.002 && Math.abs(st.v) < span*.02){ st.x = to; onUpdate(to); onDone && onDone(); return; }
     onUpdate(st.x); raf = requestAnimationFrame(step); };
@@ -522,6 +525,19 @@ scrim.addEventListener("click", () => closeSheet());
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !sheet.hidden) closeSheet(); });
 
 /* ==================== 事件与启动 ==================== */
+function deepLink(){ const q = new URLSearchParams(location.hash.slice(1)), shot = q.get("shot"); if (!shot) return;
+  REDUCED = true;                                              // 截图模式不放动画，直接给终态
+  if (q.get("case")){ S.ci = Math.max(0, Math.min(UI.length-1, +q.get("case"))); $$("#cases button").forEach((x, i) => x.setAttribute("aria-pressed", i === S.ci)); resetAll(); }
+  document.body.classList.add("shot", shot.startsWith("kid") ? "shot-kid" : "shot-par"); $(".stage").dataset.show = shot.startsWith("kid") ? "kid" : "parent";
+  const first = cur().sessions.indexOf(sess()[0]), go = {
+    "kid-guess":  () => { S.kid.si = first; kidGuess(); kidGo("guess"); },
+    "kid-reveal": () => { S.kid.si = first; S.kid.guess = +(q.get("guess") || 50); kidReveal(); kidGo("reveal"); },
+    "kid-friend": () => { kidFriend(sess()[0].f); kidGo("friend"); },
+    "par-round2": () => { S.par.reason = q.get("reason") || "闹别扭了"; S.par.next = "no"; parent(); const b = $("#p-body"), t = $$("#p-body .lbl")[0]; b.scrollTop = t ? t.offsetTop - 10 : 0; },
+    "par-ai":     () => openSheet(aiSheet()),
+    "par-trend":  () => { S.par.tab = "trend"; parent(); },
+    "par-trust":  () => { S.par.tab = "trust"; parent(); } }[shot];
+  go && go(); }
 function caption(){ const c = cur(); $("#cap").innerHTML = `<b>三种情形，同一个助手。</b>这一情形：固定阈值规则会报 <b>${c.rule.length} 条</b>，助手${c.assistant.remind ? "<b>只发 1 条</b>" : "<b>决定一条都不发</b>"}。数字是示意；助手的每一句话、每一次提醒或不提醒，都是真实模型输出，并通过了程序校验。`; }
 function resetAll(){ S.kid = {view:"home", si:0, guess:50, from:"home", gap:null}; S.par.tab = "week"; S.par.reason = null; S.par.next = null;
   if (!sheet.hidden){ sAnim && sAnim.cancel(); sheetPaint(1); sheet.hidden = true; $("#p-main").inert = false; $(".tabs").inert = false; }
@@ -544,7 +560,7 @@ document.addEventListener("click", e => { const b = e.target.closest("button"); 
   else if (d.confirmRemove){ S.par.removed[S.ci + d.confirmRemove] = true; parent(); kidHome(); kidGo("home"); closeSheet(); }
   else if (d.next){ S.par.next = S.par.next === d.next ? null : d.next; parent(); const t = $(`#p-body [data-next="${d.next}"]`); t && t.focus({preventScroll:true});
     const el = $("#p-body"), to = $("#p-body .lbl"); el.scrollTo({top:to ? to.offsetTop - 12 : 0, behavior:REDUCED ? "auto" : "smooth"}); } });
-if (!REAL.length) document.body.innerHTML = '<p style="padding:40px;text-align:center">还没有注入真实数据（REAL 为空）。</p>'; else resetAll();
+if (!REAL.length) document.body.innerHTML = '<p style="padding:40px;text-align:center">还没有注入真实数据（REAL 为空）。</p>'; else { resetAll(); deepLink(); }
 </script>
 </body>
 </html>
