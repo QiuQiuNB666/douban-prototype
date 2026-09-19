@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="豆伴">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F8F8F0">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.png">
+<title>豆伴</title>
+<style>
+/* 美术范式同 ../豆伴.html：Animal Island UI（MIT）。令牌取自其 :root 实测值，样式自写。 */
+:root{
+  --bg:#F8F8F0; --paper:#F7F3DF; --white:#FFFDF6; --ink:#794F27; --ink2:#725D42; --ink3:#7D6F58; --line:#E8E2D6; --line2:#DCD8D1;
+  --teal:#19C8B9; --teal-d:#08766D; --teal-soft:#E6F9F6; --on-teal:#0A4A44; --yellow:#F5C31C; --yellow-d:#C99A0A; --on-yellow:#5C3A18;
+  --me:#19C8B9; --you:#F09A5A; --you-d:#A35518; --gray:#DCD8D1; --hard:#BDAEA0; --red:#E05A5A; --red-d:#B13E3E;
+  --ease:cubic-bezier(.4,0,.2,1);
+  font:600 100%/1.5715 Nunito,"Noto Sans SC",-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  color:var(--ink); letter-spacing:.01em; -webkit-text-size-adjust:100%;
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background-color:var(--bg);background-image:radial-gradient(circle,rgba(190,178,150,.28) 1.5px,transparent 1.5px);background-size:22px 22px;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+button{font:inherit;color:inherit;letter-spacing:inherit;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button:focus-visible,[role=slider]:focus-visible{outline:3px solid var(--on-teal);outline-offset:2px}
+[hidden]{display:none!important}
+#root{min-height:100%;display:flex}
+.view{flex:1;width:100%;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 14px) 20px calc(env(safe-area-inset-bottom,0px) + 22px);max-width:520px;margin:0 auto}
+.grow{flex:1}
+h1{font-size:1.7rem;font-weight:900;line-height:1.2}
+.sub{color:var(--ink2);font-size:.86rem}
+.layer{position:relative;display:inline-flex;font-size:1.1rem;height:2.1em;margin:.3em 0 0 .26em}
+.layer::before{content:"";position:absolute;inset:-.3em .65em 0 -.26em;background:var(--yellow-d);border-radius:.35em}
+.layer span{position:relative;display:inline-flex;align-items:center;height:2.1em;padding:0 1.2em;border-radius:.35em;background:var(--yellow);color:var(--on-yellow);font-weight:900;letter-spacing:.08em}
+.lbl{margin:22px 2px 10px;font-size:.78rem;font-weight:800;color:var(--ink2);letter-spacing:.06em;display:flex;align-items:center;gap:8px}
+.lbl::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--teal)}
+.card{background:var(--paper);border:2px solid var(--line);border-radius:24px;padding:16px}
+.card+.card{margin-top:12px}
+button.card{display:block;width:100%;text-align:left;background:var(--white);border-color:var(--white);box-shadow:0 5px 0 var(--hard);transition:all .2s var(--ease)}
+button.card:active{transform:translateY(3px);box-shadow:0 2px 0 var(--hard)}
+button.card+button.card{margin-top:15px}
+.row{display:flex;align-items:center;gap:12px}
+.t1{font-weight:800;font-size:.96rem}
+.t2{font-size:.8rem;color:var(--ink2)}
+.steps{counter-reset:s;list-style:none;padding:0}
+.steps li{counter-increment:s;display:flex;gap:10px;padding:8px 0;font-size:.88rem;color:var(--ink2);border-top:2px dashed var(--line)}
+.steps li:first-child{border-top:0}
+.steps li b{color:var(--ink);font-weight:900}
+.steps li::before{content:counter(s);flex:none;width:24px;height:24px;border-radius:50%;background:var(--teal);color:var(--on-teal);font-weight:900;font-size:.8rem;display:grid;place-items:center}
+.cta{display:block;width:100%;margin-top:16px;padding:14px;border-radius:50px;background:var(--yellow);color:var(--on-yellow);font-weight:900;font-size:1.02rem;letter-spacing:.06em;box-shadow:0 5px 0 var(--yellow-d);transition:all .2s var(--ease)}
+.cta:active{transform:translateY(3px);box-shadow:0 2px 0 var(--yellow-d)}
+.cta.ghost{background:var(--white);color:var(--ink);box-shadow:0 5px 0 var(--hard)}
+.cta.ghost:active{box-shadow:0 2px 0 var(--hard)}
+.cta:disabled{opacity:.6}
+.note{margin-top:16px;font-size:.76rem;color:var(--ink3);text-align:center;line-height:1.7}
+.warn{margin-top:12px;padding:12px 14px;border-radius:18px;background:var(--paper);border:2px dashed var(--line2);font-size:.84rem;color:var(--ink2);line-height:1.65}
+.warn b{display:block;font-size:.72rem;font-weight:900;letter-spacing:.06em;margin-bottom:2px}
+.warn.bad{background:#FBE3E3;border:2px solid #EDB4B4;color:#8E2B2B}
+
+/* 录音键 */
+.recwrap{display:grid;place-items:center;padding:26px 0 8px}
+.rec{position:relative;width:168px;height:168px;border-radius:50%;background:var(--red);color:#fff;font-weight:900;font-size:1.15rem;letter-spacing:.1em;border:6px solid #fff;box-shadow:0 8px 0 var(--red-d);transition:all .2s var(--ease)}
+.rec:active{transform:translateY(4px);box-shadow:0 4px 0 var(--red-d)}
+.rec.on{background:var(--teal);color:var(--on-teal);box-shadow:0 8px 0 var(--teal-d)}
+.rec.on:active{box-shadow:0 4px 0 var(--teal-d)}
+.rec.on::after{content:"";position:absolute;inset:-16px;border-radius:50%;border:4px solid var(--teal);opacity:.5;animation:ring 1.6s ease-out infinite}
+@keyframes ring{from{transform:scale(.92);opacity:.6}to{transform:scale(1.18);opacity:0}}
+.timer{font-size:2.6rem;font-weight:900;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.meter{height:16px;border-radius:8px;background:var(--white);border:2px solid var(--line);overflow:hidden;margin:14px 12px 0}
+.meter i{display:block;height:100%;width:100%;background:var(--teal);transform-origin:left;transform:scaleX(0);transition:transform .08s linear}
+
+/* 先猜后看 */
+.q{padding:18px 2px 0;font-size:1.5rem;font-weight:900;line-height:1.3;text-wrap:balance}
+.who{display:flex;justify-content:space-between;margin:30px 2px 12px;font-size:.9rem;font-weight:900}
+.who span:first-child{color:var(--teal-d)}.who span:last-child{color:var(--you-d)}
+.who i{font-style:normal;font-weight:700;color:var(--ink2);margin-left:5px}
+.split{--v:.5;position:relative;height:62px;border-radius:999px;background:var(--you);border:3px solid #fff;box-shadow:0 5px 0 var(--hard);touch-action:none;cursor:grab}
+.split .fill{position:absolute;inset:0;border-radius:999px;overflow:hidden;background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.2) 0 9px,transparent 9px 20px)}
+.split .fill::before{content:"";position:absolute;inset:0;background-color:var(--me);background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.22) 0 9px,transparent 9px 20px);transform-origin:left;transform:scaleX(var(--v))}
+.split .knob{position:absolute;top:50%;left:calc(var(--v)*100%);width:40px;height:50px;margin:-25px 0 0 -20px;background:#FFFBEF;border:3px solid var(--ink);border-radius:58% 42% 55% 45%/52% 56% 44% 48%;box-shadow:0 3px 0 rgba(121,79,39,.35);transition:transform .15s var(--ease)}
+.split.drag .knob{transform:scale(1.12) rotate(-6deg)}
+.split.ro{cursor:default}.split.ro .knob{display:none}
+.split .ghost{position:absolute;top:-10px;bottom:-10px;left:calc(var(--guess)*100%);width:0;border-left:3px dashed var(--ink)}
+.split .ghost::after{content:"你猜的";position:absolute;bottom:-20px;left:-22px;width:44px;font-size:.68rem;font-weight:900;text-align:center}
+.hint{margin-top:16px;text-align:center;font-size:.82rem;color:var(--ink3)}
+.verdict{margin-top:40px;text-align:center;font-size:1.3rem;font-weight:900;line-height:1.35;text-wrap:balance}
+.verdict small{display:block;margin-top:6px;font-size:.82rem;font-weight:600;color:var(--ink2)}
+.strip{display:flex;height:20px;border-radius:10px;overflow:hidden;background:var(--white);border:2px solid var(--line)}
+.strip i{flex:1}.strip .a{background:var(--me)}.strip .b{background:var(--you)}.strip .q{background:var(--gray)}
+.facts{margin-top:18px;padding:6px 16px}
+.facts .row{padding:11px 0;border-top:2px dashed var(--line);font-size:.88rem;font-weight:700}
+.facts .row:first-child{border-top:0}
+.facts .row b{margin-left:auto;font-weight:900}
+.dot{flex:none;width:11px;height:11px;border-radius:50%;background:var(--c);border:2px solid #fff;box-shadow:0 0 0 1px var(--line2)}
+.back{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--white);border:2px solid var(--line)}
+.back:active{transform:translateY(2px)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:16px;background:var(--teal-soft);border:1.5px solid #9ADFD6;color:var(--on-teal);font-size:.76rem;font-weight:700}
+.spin{width:54px;height:54px;border-radius:50%;border:6px solid var(--line);border-top-color:var(--teal);animation:sp 1s linear infinite;margin:0 auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01s!important}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<input type="file" id="file" accept="audio/*,video/*,.m4a,.wav,.mp3,.aac,.caf,.ogg,.flac" hidden>
+
+<script>
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const KEY = "douban.sessions.v1", BAND = 5;
+const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } };
+const save = list => { try { localStorage.setItem(KEY, JSON.stringify(list.slice(0, 200))); } catch {} };
+const mmss = s => { s = Math.round(s); return s >= 60 ? `${Math.floor(s/60)} 分${s%60 ? " " + (s%60) + " 秒" : "钟"}` : `${s} 秒`; };
+const clock = s => `${String(Math.floor(s/60)).padStart(2, "0")}:${String(Math.floor(s%60)).padStart(2, "0")}`;
+function cheng(v){ if (v <= 2) return "不到 1 成"; if (v >= 98) return "快 10 成"; const n = Math.floor(v/10), r = v - n*10;
+  return r < 2.5 ? (n ? `${n} 成` : "不到 1 成") : r < 7.5 ? (n ? `${n} 成半` : "不到 1 成") : `${n+1} 成`; }
+const when = t => { const d = new Date(t), p = n => String(n).padStart(2, "0"); return `${d.getMonth()+1} 月 ${d.getDate()} 日 ${p(d.getHours())}:${p(d.getMinutes())}`; };
+const BACK = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
+
+const S = {cur:null, guess:50, rec:null};
+const show = html => { $("#root").innerHTML = `<div class="view">${html}</div>`; scrollTo(0, 0); };
+
+/* ==================== 首页 ==================== */
+function home(msg){ const list = load(), mic = window.isSecureContext && navigator.mediaDevices && window.MediaRecorder;
+  show(`<div class="row"><h1 class="layer"><span>豆伴</span></h1><div class="sub">验证版 · 手机当豆子的替身</div></div>
+    ${msg ? `<div class="warn bad" style="margin-top:16px"><b>没成功</b>${esc(msg)}</div>` : ""}
+    <div class="recwrap"><button class="rec" data-act="rec" ${mic ? "" : "disabled style='opacity:.45'"}>开始录</button></div>
+    ${mic ? "" : `<div class="warn"><b>这个地址用不了麦克风</b>手机浏览器只给 HTTPS 的页面用麦克风。用 <b style="display:inline;font-size:inherit">https://…:8443/m/</b> 打开（第一次点「继续访问」），或者先传一段已有的录音。</div>`}
+    <div class="card" style="margin-top:14px"><ol class="steps">
+      <li><span>把手机别在领口，或者放进胸前口袋，麦克风朝上。</span></li>
+      <li><span>开录后<b>你先说一句</b>，停一下，<b>对方再说一句</b>。这两句是校准。</span></li>
+      <li><span>然后随便聊。屏幕要一直亮着，锁屏会停录。</span></li></ol></div>
+    <button class="cta ghost" data-act="pick">传一段已有的录音</button>
+    ${list.length ? `<div class="lbl">记录 · 只存数字</div>` + list.map((s, i) => `<button class="card" data-open="${i}"><div class="row"><div class="grow"><div class="t1">我说了 ${cheng(s.share)}</div><div class="t2">${when(s.at)} · ${mmss(s.me + s.you)}</div></div>
+      <div style="width:96px"><div class="strip" style="height:12px">${strip(s.strip, 40)}</div></div></div></button>`).join("") + `<button class="cta ghost" data-act="clear" style="margin-top:20px;font-size:.86rem;padding:10px">清空记录</button>` : ""}
+    <div class="note">录音传到你自己的电脑上算，算完就删，<br>这里和电脑上留下的都只有数字。</div>`); }
+const strip = (s, n) => { const step = s.length/(n || s.length); let out = ""; for (let i = 0; i < (n || s.length); i++){ const c = s[Math.floor(i*step)]; out += `<i class="${{A:"a", B:"b", "?":"q"}[c] || ""}"></i>`; } return out; };
+
+/* ==================== 录音 ==================== */
+async function startRec(){
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false, channelCount:1}}); }   // 近场和远场靠响度差分开：自动增益、降噪都要关
+  catch (e) { return home(e.name === "NotAllowedError" ? "没有拿到麦克风权限。到系统设置里允许这个网站用麦克风，再试一次。" : "打不开麦克风：" + e.message); }
+  const mime = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"].find(m => MediaRecorder.isTypeSupported(m)) || "";
+  const mr = new MediaRecorder(stream, mime ? {mimeType:mime} : undefined), chunks = [], t0 = performance.now();
+  const ac = new (window.AudioContext || window.webkitAudioContext)(), an = ac.createAnalyser(); an.fftSize = 1024; ac.createMediaStreamSource(stream).connect(an);
+  const buf = new Float32Array(an.fftSize), rec = S.rec = {mr, stream, ac, alive:true, lock:null};
+  navigator.wakeLock && navigator.wakeLock.request("screen").then(l => rec.lock = l).catch(() => {});
+  mr.ondataavailable = e => e.data.size && chunks.push(e.data);
+  mr.onstop = () => { stopAll(rec); const secs = (performance.now() - t0)/1000, type = mr.mimeType || mime || "audio/mp4";
+    if (secs < 8) return home("录得太短了，至少聊上十几秒。");
+    upload(new Blob(chunks, {type}), /mp4|aac/.test(type) ? "m4a" : "webm"); };
+  mr.start(1000);
+  show(`<div class="grow"></div><div class="timer" id="tm">00:00</div><div class="sub" style="text-align:center">录音中 · 你先说一句，对方再说一句</div>
+    <div class="meter"><i id="lv"></i></div>
+    <div class="recwrap"><button class="rec on" data-act="stop">停</button></div>
+    <div class="note">屏幕要一直亮着。锁屏或者切到别的 App，录音会断。</div><div class="grow"></div>`);
+  (function tick(){ if (!rec.alive) return; an.getFloatTimeDomainData(buf); let p = 0; for (const x of buf) p = Math.max(p, Math.abs(x));
+    const tm = $("#tm"), lv = $("#lv"); if (tm) tm.textContent = clock((performance.now() - t0)/1000); if (lv) lv.style.transform = `scaleX(${Math.min(1, p*1.6)})`;
+    requestAnimationFrame(tick); })();
+}
+function stopAll(rec){ rec.alive = false; rec.stream.getTracks().forEach(t => t.stop()); rec.ac.close().catch(() => {}); rec.lock && rec.lock.release().catch(() => {}); S.rec = null; }
+document.addEventListener("visibilitychange", () => { const r = S.rec; if (document.hidden && r && r.mr.state === "recording") r.mr.stop(); });   // 切走就收尾，别丢掉已经录的
+
+/* ==================== 上传、先猜后看 ==================== */
+async function upload(blob, ext){
+  show(`<div class="grow"></div><div class="spin"></div><div class="sub" style="text-align:center;margin-top:18px">正在算……<br>录音传到你的电脑上，算完就删</div><div class="grow"></div>`);
+  try { const r = await fetch("/api/analyze", {method:"POST", body:blob, headers:{"X-Ext":ext}}), d = await r.json();
+    if (!r.ok) throw new Error(d.error || "服务出错了");
+    S.cur = {at:Date.now(), share:Math.round(d.share), me:Math.round(d.me), you:Math.round(d.you), gray:Math.round(d.gray), mono:[d.mono_who, Math.round(d.mono)],
+      strip:d.strip, warn:d.warnings, mode:d.mode, sep:Math.round(d.sep_db), took:d.seconds};
+    guess();
+  } catch (e) { home(e.message === "Failed to fetch" || e.message === "Load failed" ? "连不上电脑上的分析服务。手机和电脑要在同一个 WiFi 下，电脑上的服务要开着。" : e.message); } }
+
+const whoLine = v => `<span>我<i>${cheng(v)}</i></span><span>对方<i>${cheng(100 - v)}</i></span>`;
+function guess(){ S.guess = 50;
+  show(`<div class="q">猜猜刚才这一段，<br>你和对方谁说得多？</div>
+    <div class="who" id="who">${whoLine(50)}</div>
+    <div class="split" id="split" role="slider" tabindex="0" aria-label="我说了几成" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><div class="fill"></div><div class="knob"></div></div>
+    <div class="hint">拖动滑块，左边是你，右边是对方。<br>1 成就是 10 份里的 1 份。</div>
+    <div class="grow"></div><button class="cta" data-act="reveal">猜好了</button>`);
+  const el = $("#split"); let grab = 0;
+  const set = v => { v = Math.max(0, Math.min(100, v)); S.guess = Math.round(v/5)*5; el.style.setProperty("--v", v/100); $("#who").innerHTML = whoLine(S.guess); el.setAttribute("aria-valuenow", S.guess); };
+  const at = e => { const r = el.getBoundingClientRect(); return (e.clientX - grab - r.left)/r.width*100; };
+  el.addEventListener("pointerdown", e => { try { el.setPointerCapture(e.pointerId); } catch {} el.classList.add("drag");
+    const k = $(".knob", el).getBoundingClientRect(), cx = k.left + k.width/2; grab = Math.abs(e.clientX - cx) <= 30 ? e.clientX - cx : 0; set(at(e)); });
+  el.addEventListener("pointermove", e => el.classList.contains("drag") && set(at(e)));
+  const end = () => { if (!el.classList.contains("drag")) return; el.classList.remove("drag"); el.style.setProperty("--v", S.guess/100); };
+  el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+  el.addEventListener("keydown", e => { const d = {ArrowLeft:-5, ArrowRight:5}[e.key]; if (d){ set(S.guess + d); e.preventDefault(); } }); }
+
+function reveal(s, g){ const old = g == null, diff = old ? 0 : Math.abs(g - s.share);
+  const msg = old ? `我说了 ${cheng(s.share)}，<br>对方说了 ${cheng(100 - s.share)}。` : diff <= BAND ? `差不多，你猜对了！<small>设备自己也会量偏一点点，这就算猜对了。</small>`
+    : `你猜你说了 ${cheng(g)}，<br>其实是 ${cheng(s.share)}。<small>${s.share < g ? "对方说得比你以为的多。" : "你说得比自己以为的多。"}</small>`;
+  show(`<div class="row"><button class="back" data-act="home" aria-label="回首页">${BACK}</button><div class="pill">${old ? when(s.at) : `刚刚算的，用时 ${s.took} 秒 · 录音已删`}</div></div>
+    <div class="who">${whoLine(s.share)}</div>
+    <div class="split ro" style="--v:${s.share/100};--guess:${(old ? s.share : g)/100}"><div class="fill"></div>${old ? "" : '<div class="ghost"></div>'}</div>
+    <div class="verdict">${msg}</div>
+    <div class="lbl">时间线 · 谁在什么时候说</div><div class="strip">${strip(s.strip)}</div>
+    ${(s.warn || []).map(w => `<div class="warn"><b>照实说明</b>${esc(w)}</div>`).join("")}
+    <div class="card facts">
+      <div class="row">一起说了<b>${mmss(s.me + s.you)}</b></div>
+      <div class="row"><span class="dot" style="--c:var(--me)"></span>我说了<b>${mmss(s.me)}</b></div>
+      <div class="row"><span class="dot" style="--c:var(--you)"></span>对方说了<b>${mmss(s.you)}</b></div>
+      <div class="row">一口气说得最久的<b>${s.mono[0] === "me" ? "我" : "对方"} · ${mmss(s.mono[1])}</b></div>
+      <div class="row"><span class="dot" style="--c:var(--gray)"></span>分不清远近，没算进去<b>${mmss(s.gray)}</b></div></div>
+    <div class="note">两个人的声音差 ${s.sep} dB · 校准方式：${s.mode === "opening" ? "开头两句" : "自动分两堆"}</div>
+    <button class="cta" data-act="home">${old ? "回首页" : "存下来，回首页"}</button>`); }
+
+/* ==================== 事件 ==================== */
+document.addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.disabled) return; const a = b.dataset.act;
+  if (a === "rec") startRec();
+  else if (a === "stop") S.rec && S.rec.mr.state === "recording" && S.rec.mr.stop();
+  else if (a === "pick") $("#file").click();
+  else if (a === "reveal"){ const g = S.guess, s = S.cur; s.guess = g; save([s, ...load()]); reveal(s, g); }
+  else if (a === "home") home();
+  else if (a === "clear"){ if (confirm("清空这台手机上的全部记录？")){ save([]); home(); } }
+  else if (b.dataset.open != null) reveal(load()[+b.dataset.open]); });
+$("#file").addEventListener("change", e => { const f = e.target.files[0]; e.target.value = ""; if (f) upload(f, (f.name.split(".").pop() || "").slice(0, 8)); });
+home();
+</script>
+</body>
+</html>
