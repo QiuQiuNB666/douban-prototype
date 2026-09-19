@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Noto+Sans+SC:wght@500;700;900&display=swap">
+<title>豆伴 · 可点原型</title>
+<style>
+/* 美术范式：Animal Island UI（MIT，guokaigdg/animal-island-ui）。令牌取自其 :root 实测值；样式为本页自写，未引入其代码与素材。 */
+:root{
+  --stage:#88C9A1; --bg:#F8F8F0; --paper:#F7F3DF; --white:#FFFDF6;
+  --ink:#794F27; --ink2:#725D42; --ink3:#7D6F58; --line:#E8E2D6; --line2:#DCD8D1;
+  --teal:#19C8B9; --teal-d:#0B857B; --teal-soft:#E6F9F6; --on-teal:#0A4A44;
+  --yellow:#F5C31C; --yellow-d:#C99A0A; --on-yellow:#5C3A18;
+  --me:#19C8B9; --you:#F09A5A; --you-d:#A35518; --you-soft:#FDEBDC; --gray:#DCD8D1;
+  --ok:#6FBA2C; --warn:#C94444; --hard:#BDAEA0;
+  --r-lg:24px; --r-md:18px; --r-sm:16px;
+  --ease:cubic-bezier(.4,0,.2,1);
+  font:600 100%/1.5715 Nunito,"Noto Sans SC",-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  color:var(--ink); -webkit-text-size-adjust:100%; letter-spacing:.01em;
+}
+*{box-sizing:border-box;margin:0}
+body{min-height:100vh;padding:clamp(16px,3vw,30px) 16px 44px;background-color:var(--stage);
+  background-image:radial-gradient(circle,rgba(90,160,105,.4) 1.5px,transparent 1.5px),radial-gradient(circle,rgba(110,180,125,.3) 1px,transparent 1px);
+  background-size:28px 28px,14px 14px;background-position:0 0,7px 7px}
+button{font:inherit;color:inherit;letter-spacing:inherit;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button:focus-visible,[role=slider]:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+[hidden]{display:none!important}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-variant-numeric:tabular-nums;font-weight:500;letter-spacing:0}
+
+/* ---------- 舞台 ---------- */
+.top{max-width:880px;margin:0 auto 24px;display:flex;flex-wrap:wrap;gap:14px 18px;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:14px}
+.brand small{font-size:.78rem;color:#2F6B47;font-weight:700}
+.layer{position:relative;display:inline-flex;font-size:1.35rem;height:2.1em;margin:.3em 0 0 .26em}
+.layer::before{content:"";position:absolute;inset:-.3em .65em 0 -.26em;background:var(--yellow-d);border-radius:.35em}
+.layer .front{position:relative;display:inline-flex;align-items:center;height:2.1em;padding:0 1.3em;border-radius:.35em;background:var(--yellow);color:var(--on-yellow);font-weight:900;letter-spacing:.08em;box-shadow:0 .1em .16em rgba(0,0,0,.08)}
+.seg{display:flex;flex-wrap:wrap;gap:2px;padding:4px;background:var(--bg);border:2px solid var(--line);border-radius:999px}
+.seg button{display:inline-flex;align-items:center;gap:7px;padding:7px 15px 7px 12px;border-radius:999px;font-size:.84rem;font-weight:700;color:var(--ink2);transition:all .25s var(--ease)}
+.seg button::before{content:"";width:8px;height:8px;border-radius:50%;border:2px solid var(--line2);transition:all .25s var(--ease)}
+.seg button:active{transform:translateY(1px)}
+.seg button[aria-pressed=true]{background:var(--teal);color:var(--on-teal)}
+.seg button[aria-pressed=true]::before{background:var(--ink);border-color:var(--ink)}
+.which{display:none}
+.stage{max-width:880px;margin:0 auto;display:flex;justify-content:center;gap:clamp(20px,5vw,60px);flex-wrap:wrap}
+.device{width:min(344px,100%);display:flex;flex-direction:column;align-items:center;gap:12px}
+.device>h2{padding:5px 14px;border-radius:999px;background:var(--bg);border:1.5px solid var(--line);font-size:.78rem;font-weight:800;color:var(--ink)}
+.device>h2 span{color:var(--ink3);font-weight:600}
+.phone{width:100%;height:min(700px,82vh);min-height:560px;background:var(--white);border:3px solid #fff;border-radius:46px;padding:9px;box-shadow:0 9px 0 #5FA97C,0 26px 40px -8px rgba(30,80,50,.35)}
+.screen{position:relative;height:100%;border-radius:35px;overflow:hidden;background:var(--bg);isolation:isolate;border:2px solid var(--line)}
+.time-ctl{min-height:46px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:9px;font-size:.8rem;font-weight:700;color:#2F6B47}
+.time-ctl button{padding:7px 15px;border-radius:999px;background:var(--bg);color:var(--ink);font-weight:800;box-shadow:0 4px 0 var(--hard);transition:all .15s var(--ease)}
+.time-ctl button:active{transform:translateY(2px);box-shadow:0 1px 0 var(--hard)}
+.time-ctl button[aria-pressed=true]{background:var(--teal);color:var(--on-teal);box-shadow:0 4px 0 var(--teal-d)}
+.foot{max-width:720px;margin:26px auto 0;padding:12px 18px;border-radius:var(--r-md);background:rgba(248,248,240,.85);font-size:.76rem;font-weight:600;color:var(--ink2);text-align:center;line-height:1.75}
+@media (max-width:759px){
+  .which{display:flex}
+  .stage[data-show=kid] #parent,.stage[data-show=parent] #kid{display:none}
+}
+
+/* ---------- 手机里通用 ---------- */
+.view{position:absolute;inset:0;display:flex;flex-direction:column;background-color:var(--bg);
+  background-image:radial-gradient(circle,rgba(190,178,150,.28) 1.5px,transparent 1.5px);background-size:22px 22px;
+  transition:transform .42s cubic-bezier(.32,.72,0,1),opacity .42s;will-change:transform}
+.view[data-pos=ahead]{transform:translateX(100%);pointer-events:none}
+.view[data-pos=behind]{transform:translateX(-28%);opacity:0;pointer-events:none}
+.bar{flex:none;height:54px;padding:14px 12px 0;display:flex;align-items:center;gap:6px}
+.bar .back{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--white);border:2px solid var(--line);transition:all .15s var(--ease)}
+.bar .back:active{transform:translateY(2px);background:var(--paper)}
+.bar b{font-size:.95rem;font-weight:800}
+.body{flex:1;overflow-y:auto;padding:6px 18px 28px;scrollbar-width:none}
+.body::-webkit-scrollbar{display:none}
+.hello{padding:28px 0 4px;font-size:1.6rem;font-weight:900;letter-spacing:.01em;line-height:1.2}
+.sub{color:var(--ink2);font-size:.84rem;font-weight:600}
+.pill{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:5px 12px 5px 9px;border-radius:999px;background:#EEF7E2;border:1.5px solid #CFE6B2;color:#3F6E15;font-size:.76rem;font-weight:700}
+.lbl{margin:24px 2px 10px;font-size:.78rem;font-weight:800;color:var(--ink2);letter-spacing:.06em;display:flex;align-items:center;gap:8px}
+.lbl::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--teal)}
+.card{background:var(--paper);border:2px solid var(--line);border-radius:var(--r-lg);padding:16px}
+.card+.card{margin-top:12px}
+button.card{display:block;width:100%;text-align:left;background:var(--white);box-shadow:0 5px 0 var(--hard);border-color:var(--white);transition:all .2s var(--ease)}
+button.card:hover{transform:translateY(-1px);box-shadow:0 6px 0 var(--hard)}
+button.card:active{transform:translateY(3px);box-shadow:0 2px 0 var(--hard)}
+button.card+button.card{margin-top:15px}
+.row{display:flex;align-items:center;gap:12px}
+.grow{flex:1;min-width:0}
+.av{flex:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:1rem;color:#fff;background:var(--c,#999);border:3px solid #fff;box-shadow:0 2px 0 rgba(121,79,39,.18);text-shadow:0 1px 1px rgba(0,0,0,.15)}
+.av.sm{width:32px;height:32px;font-size:.8rem;border-width:2px}
+.t1{font-weight:800;font-size:.96rem}
+.t2{font-size:.8rem;color:var(--ink2);font-weight:600}
+.star{display:inline-flex;align-items:center;gap:4px;font-size:.7rem;font-weight:800;color:var(--on-yellow);background:#FCEFB4;border:1.5px solid #F2D96B;padding:1px 8px;border-radius:999px;margin-left:6px;vertical-align:1px}
+.chev{flex:none;opacity:.5}
+.cta{display:block;width:100%;margin-top:20px;padding:13px 15px;border-radius:50px;background:var(--yellow);color:var(--on-yellow);font-weight:900;font-size:1rem;letter-spacing:.06em;box-shadow:0 5px 0 var(--yellow-d);transition:all .2s var(--ease)}
+.cta:hover{transform:translateY(-1px);box-shadow:0 6px 0 var(--yellow-d)}
+.cta:active{transform:translateY(3px);box-shadow:0 2px 0 var(--yellow-d)}
+.cta.ghost{background:var(--white);color:var(--ink);box-shadow:0 5px 0 var(--hard);margin-top:16px}
+.cta.ghost:hover{box-shadow:0 6px 0 var(--hard)}.cta.ghost:active{box-shadow:0 2px 0 var(--hard)}
+.cta.danger{background:#E05A5A;color:#fff;box-shadow:0 5px 0 #B13E3E;text-shadow:0 1px 0 rgba(0,0,0,.2)}
+.cta.danger:hover{box-shadow:0 6px 0 #B13E3E}.cta.danger:active{box-shadow:0 2px 0 #B13E3E}
+.note{margin-top:20px;font-size:.75rem;font-weight:600;color:var(--ink3);text-align:center;line-height:1.7}
+.friends{display:flex;gap:16px;padding:2px}
+.friends button{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:.76rem;font-weight:800;color:var(--ink2);transition:transform .15s var(--ease)}
+.friends button:hover{transform:translateY(-2px)}.friends button:active{transform:translateY(2px)}
+
+/* ---------- 先猜后看 ---------- */
+.q{padding:16px 4px 0;font-size:1.42rem;font-weight:900;line-height:1.3;text-wrap:balance}
+.who{display:flex;justify-content:space-between;margin:32px 2px 12px;font-size:.86rem;font-weight:900}
+.who span:first-child{color:var(--teal-d)}.who span:last-child{color:var(--you-d)}
+.who i{font-style:normal;font-weight:700;color:var(--ink2);margin-left:5px}
+.split{--v:.5;position:relative;height:58px;border-radius:999px;background:var(--you);border:3px solid #fff;box-shadow:0 5px 0 var(--hard);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.split .fill{position:absolute;inset:0;border-radius:999px;overflow:hidden;background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.2) 0 9px,transparent 9px 20px)}
+.split .fill::before{content:"";position:absolute;inset:0;background-color:var(--me);background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.22) 0 9px,transparent 9px 20px);transform-origin:left;transform:scaleX(var(--v))}
+.split .knob{position:absolute;top:50%;left:calc(var(--v)*100%);width:36px;height:46px;margin:-23px 0 0 -18px;background:#FFFBEF;border:3px solid var(--ink);border-radius:58% 42% 55% 45%/52% 56% 44% 48%;box-shadow:0 3px 0 rgba(121,79,39,.35);transition:transform .15s var(--ease)}
+.split.drag{cursor:grabbing}.split.drag .knob{transform:scale(1.12) rotate(-6deg)}
+.split.ro{cursor:default}.split.ro .knob{display:none}
+.split .ghost{position:absolute;top:-10px;bottom:-10px;left:calc(var(--guess)*100%);width:0;border-left:3px dashed var(--ink)}
+.split .ghost::after{content:"你猜的";position:absolute;bottom:-20px;left:-22px;width:44px;font-size:.68rem;font-weight:900;text-align:center}
+.hint{margin-top:16px;text-align:center;font-size:.8rem;font-weight:600;color:var(--ink3)}
+.verdict{margin-top:40px;text-align:center;font-size:1.22rem;font-weight:900;line-height:1.35;opacity:0;transform:translateY(6px) scale(.98);transition:opacity .4s,transform .4s var(--ease);text-wrap:balance}
+.verdict.on{opacity:1;transform:none}
+.verdict small{display:block;margin-top:6px;font-size:.8rem;font-weight:600;color:var(--ink2)}
+.facts{margin-top:22px;padding:6px 16px}
+.facts .row{padding:11px 0;border-top:2px dashed var(--line);font-size:.86rem;font-weight:700}
+.facts .row:first-child{border-top:0}
+.facts .row b{margin-left:auto;font-weight:900}
+.dot{flex:none;width:11px;height:11px;border-radius:50%;background:var(--c);border:2px solid #fff;box-shadow:0 0 0 1px var(--line2)}
+
+/* ---------- 好友页 / 趋势 ---------- */
+.spark{display:block;width:100%;height:auto;overflow:visible}
+.parts{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}
+.part{background:var(--white);border:2px solid var(--line);border-radius:var(--r-md);padding:12px 8px;text-align:center}
+.part .arrow{font-size:1.4rem;font-weight:900;line-height:1}
+.part .arrow.up,.up{color:#4F8F17}.part .arrow.down,.down{color:var(--you-d)}.part .arrow.flat,.flat{color:var(--ink3)}
+.part div:last-child{margin-top:6px;font-size:.72rem;color:var(--ink2);font-weight:700;line-height:1.4}
+.trend .nums{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:.78rem;font-weight:600;color:var(--ink2)}
+.trend .nums b{color:var(--ink);font-weight:900}
+
+/* ---------- 家长页 ---------- */
+.tabs{position:absolute;left:10px;right:10px;bottom:10px;z-index:3;display:flex;gap:2px;padding:5px;background:rgba(248,248,240,.88);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:2px solid var(--line);border-radius:26px;box-shadow:0 4px 0 rgba(189,174,160,.55)}
+.tabs button{flex:1;padding:7px 4px 6px;border-radius:20px;font-size:.72rem;font-weight:800;color:var(--ink3);transition:all .25s var(--ease)}
+.tabs button:active{transform:translateY(1px)}
+.tabs button[aria-selected=true]{background:var(--teal);color:var(--on-teal)}
+.tabs svg{display:block;margin:0 auto 2px}
+#p-main .body{padding-bottom:104px}
+.push{height:100%;transform-origin:50% 0;will-change:transform}
+.remind{position:relative;margin-top:14px;background:var(--white);border-color:var(--white);box-shadow:0 5px 0 var(--hard);padding-top:24px}
+.nametag{position:absolute;top:-15px;left:16px;padding:4px 14px;border-radius:999px;background:var(--you);color:#fff;font-size:.76rem;font-weight:900;letter-spacing:.06em;transform:rotate(-3deg);box-shadow:0 3px 0 var(--you-d);text-shadow:0 1px 0 rgba(0,0,0,.18)}
+.kicker{font-size:.72rem;font-weight:800;letter-spacing:.06em;color:var(--ink3)}
+.say{margin-top:8px;font-size:1.04rem;font-weight:800;line-height:1.6}
+.opener{margin-top:14px;padding:12px 14px;border-radius:var(--r-md);background:var(--teal-soft);border:2px dashed #9ADFD6;font-size:.9rem;font-weight:700;line-height:1.6;color:var(--on-teal)}
+.opener b{display:block;font-size:.72rem;font-weight:900;letter-spacing:.06em;color:var(--teal-d);margin-bottom:3px}
+.line{margin-top:12px;display:flex;gap:8px;align-items:flex-start;font-size:.8rem;font-weight:600;color:var(--ink2)}
+.line svg{flex:none;margin-top:3px}
+.quiet{text-align:center;padding:26px 18px;background:var(--white);border-color:var(--white);box-shadow:0 5px 0 var(--hard)}
+.quiet .big{font-size:1.22rem;font-weight:900;margin-top:8px}
+.quiet p{margin-top:6px;font-size:.86rem;color:var(--ink2);font-weight:600}
+.tnote{margin-top:16px;padding:12px 14px;border-radius:var(--r-md);background:var(--paper);border:2px dashed var(--line2);font-size:.84rem;font-weight:600;color:var(--ink2);text-align:left;line-height:1.65}
+.tnote b{display:block;font-size:.72rem;font-weight:900;letter-spacing:.06em;color:var(--ink3);margin-bottom:2px}
+.link{display:block;margin:14px auto 0;padding:6px 12px;font-size:.82rem;font-weight:800;color:var(--teal-d);border-radius:999px;transition:all .15s var(--ease)}
+.link:hover{background:var(--teal-soft)}.link:active{transform:translateY(1px)}
+.done{margin-top:16px;padding:11px 14px;border-radius:var(--r-md);background:#EEF7E2;border:2px solid #CFE6B2;font-size:.84rem;font-weight:700;color:#3F6E15}
+.cmp{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin-top:12px;text-align:center;font-weight:900}
+.cmp div{padding:12px 6px;border-radius:var(--r-md);background:var(--white);border:2px solid var(--line)}
+.cmp b{display:block;font-size:1.55rem;font-weight:900;line-height:1.15}
+.cmp span{font-size:.72rem;color:var(--ink2);font-weight:700}
+.cmp .hit{background:#EEF7E2;border-color:#CFE6B2}.cmp .miss{background:var(--you-soft);border-color:#F6CFAE}
+.check{display:flex;gap:9px;align-items:flex-start;padding:10px 0;border-top:2px dashed var(--line);font-size:.84rem;font-weight:600;color:var(--ink2)}
+.check b{color:var(--ink);font-weight:900}
+.check:first-of-type{border-top:0}
+.check svg{flex:none;margin-top:3px}
+
+/* ---------- 底部弹层 ---------- */
+.scrim{position:absolute;inset:0;z-index:5;background:#3D3428;opacity:0;pointer-events:none}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:6;max-height:88%;display:flex;flex-direction:column;background:var(--bg);border:2px solid var(--line);border-bottom:0;border-radius:28px 28px 0 0;box-shadow:0 -8px 24px rgba(61,52,40,.18);transform:translateY(105%);will-change:transform}
+.grab{flex:none;padding:10px 0 6px;touch-action:none;cursor:grab}
+.grab::before{content:"";display:block;width:42px;height:6px;margin:0 auto;border-radius:3px;background:var(--line2)}
+.sheet h3{flex:none;padding:2px 20px 10px;font-size:1.08rem;font-weight:900}
+.sheet .in{overflow-y:auto;padding:0 20px 26px;scrollbar-width:none}
+.sheet .in::-webkit-scrollbar{display:none}
+.sheet h4{margin:20px 0 9px;font-size:.76rem;font-weight:900;letter-spacing:.06em;color:var(--ink2);display:flex;align-items:center;gap:8px}
+.sheet h4::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--teal)}
+.sheet h4:first-child{margin-top:4px}
+.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:.72rem;background:var(--white);border:2px solid var(--line);border-radius:var(--r-sm);overflow:hidden}
+.tbl th{font-weight:700;color:var(--ink3);text-align:right;padding:6px 6px;background:var(--paper)}
+.tbl th:first-child,.tbl td:first-child{text-align:left;padding-left:10px}
+.tbl td{text-align:right;padding:4px 6px;border-top:1px solid var(--line)}
+.tbl td:last-child,.tbl th:last-child{padding-right:10px}
+.tbl tr.wk td{padding-top:8px;font-weight:800;color:var(--ink2);font-family:Nunito,"Noto Sans SC","PingFang SC",sans-serif}
+.tbl tr.now td{background:#FCF3C9}
+.never{display:flex;flex-wrap:wrap;gap:6px}
+.never span{padding:3px 11px;border-radius:999px;background:var(--white);border:1.5px solid var(--line2);font-size:.76rem;font-weight:700;color:var(--ink3);text-decoration:line-through;text-decoration-thickness:2px;text-decoration-color:#E05A5A}
+.dev{padding:11px 13px;border-radius:var(--r-sm);background:var(--paper);border:2px dashed var(--line2);font-size:.8rem;font-weight:600;color:var(--ink2);line-height:1.65}
+.dev b{color:var(--ink)}
+.rule{padding:7px 0;border-top:2px dashed var(--line);font-size:.8rem;color:var(--ink2)}
+.rule:first-of-type{border-top:0}
+.opt{display:block;width:100%;margin-top:14px;padding:13px 18px;border-radius:50px;background:var(--white);text-align:left;font-weight:800;box-shadow:0 5px 0 var(--hard);transition:all .2s var(--ease)}
+.opt:first-child{margin-top:4px}
+.opt:hover{transform:translateY(-1px);box-shadow:0 6px 0 var(--hard)}
+.opt:active{transform:translateY(3px);box-shadow:0 2px 0 var(--hard)}
+
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01s!important}.view{transition:opacity .2s!important}.view[data-pos=ahead],.view[data-pos=behind]{transform:none;opacity:0}}
+@media (prefers-reduced-transparency:reduce){.tabs{background:var(--bg);backdrop-filter:none;-webkit-backdrop-filter:none}}
+@media (prefers-contrast:more){:root{--line:#9F927D;--line2:#794F27;--ink2:#5C3A18;--ink3:#5C3A18}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><h1 class="layer"><span class="front">豆伴</span></h1><small>可点原型 · 演示数据</small></div>
+  <div class="seg" id="cases" role="group" aria-label="切换情形"></div>
+  <div class="seg which" role="group" aria-label="切换页面">
+    <button data-show="kid" aria-pressed="true">孩子页</button><button data-show="parent" aria-pressed="false">家长页</button>
+  </div>
+</header>
+
+<main class="stage" data-show="kid">
+  <section class="device" id="kid">
+    <h2>孩子页 <span>· 回家同步之后</span></h2>
+    <div class="phone"><div class="screen">
+      <div class="view" id="k-home"></div>
+      <div class="view" id="k-guess"></div>
+      <div class="view" id="k-reveal"></div>
+      <div class="view" id="k-friend"></div>
+    </div></div>
+    <div class="time-ctl"></div>
+  </section>
+
+  <section class="device" id="parent">
+    <h2>家长页 <span>· 每周最多一条提醒</span></h2>
+    <div class="phone"><div class="screen">
+      <div class="push"><div class="view" id="p-main" data-pos="active"><div class="body" id="p-body"></div></div></div>
+      <nav class="tabs" role="tablist" aria-label="家长页">
+        <button role="tab" data-tab="week"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>本周</button>
+        <button role="tab" data-tab="trend"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 3 8-9"/><path d="M15 5h5v5"/></svg>趋势</button>
+        <button role="tab" data-tab="trust"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>好友与录音</button>
+      </nav>
+      <div class="scrim"></div>
+      <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-title"><div class="grab"></div><h3 id="sh-title"></h3><div class="in"></div></div>
+    </div></div>
+    <div class="time-ctl" id="time"></div>
+  </section>
+</main>
+
+<p class="foot">数字是示意，不是实测。助手的每一句话和每一次「提醒 / 不提醒」的决定，都是 2026-09-19 真实模型输出（claude-fable-5-1），并通过了程序校验。<br>好友昵称只在这台手机上显示；模型看到的只有「好友A」这样的代号，看不到音频、文字和姓名。</p>
+
+<script>
+/* 真实部分：三种情形的数字、固定规则的结果、模型输出、程序校验结果。由 实验/assistant_results.json 注入，不手改。 */
+const REAL = /*REAL*/[{"name": "考试周，所有好友的时长一起降了一半", "weeks": [{"total_days": 5, "friends": {"好友A": {"share": 47, "monolog_s": 38, "minutes": 62, "days": 4}, "好友B": {"share": 52, "monolog_s": 45, "minutes": 40, "days": 3}, "好友C": {"share": 44, "monolog_s": 30, "minutes": 36, "days": 3}}}, {"total_days": 5, "friends": {"好友A": {"share": 45, "monolog_s": 41, "minutes": 58, "days": 4}, "好友B": {"share": 50, "monolog_s": 40, "minutes": 44, "days": 3}, "好友C": {"share": 46, "monolog_s": 33, "minutes": 34, "days": 3}}}, {"total_days": 5, "friends": {"好友A": {"share": 46, "monolog_s": 36, "minutes": 60, "days": 4}, "好友B": {"share": 51, "monolog_s": 42, "minutes": 42, "days": 3}, "好友C": {"share": 45, "monolog_s": 35, "minutes": 38, "days": 3}}}, {"total_days": 3, "friends": {"好友A": {"share": 46, "monolog_s": 30, "minutes": 29, "days": 2}, "好友B": {"share": 49, "monolog_s": 35, "minutes": 20, "days": 1}, "好友C": {"share": 47, "monolog_s": 28, "minutes": 17, "days": 1}}}], "rule": ["好友A：minutes、days 下降", "好友B：minutes、days 下降", "好友C：minutes、days 下降"], "assistant": {"remind": false, "friend": "", "metric": "none", "sentence": "", "opener": "", "recovery_op": "none", "recovery_value": 0, "trend_note": "本周有记录的天数从5天变为3天，和三位好友一起说话的时长同步减少，各段关系里的说话占比都保持平稳。", "reason": "total_days 从5降到3，三位好友的 minutes 和 days 同比例一起下降（约减半），而 share 全部稳定在44-52%的历史区间内、monolog_s 同步小幅回落，属于所有好友一起变的外部共同原因，没有任何单独一位好友的变化，所以不提醒。"}, "errors": []}, {"name": "和好友 A 的时长降到 0，同期和新好友 C 从 0 涨到 80 分钟，总次数照常", "weeks": [{"total_days": 5, "friends": {"好友A": {"share": 48, "monolog_s": 40, "minutes": 70, "days": 4}, "好友B": {"share": 50, "monolog_s": 38, "minutes": 35, "days": 2}}}, {"total_days": 5, "friends": {"好友A": {"share": 47, "monolog_s": 42, "minutes": 66, "days": 4}, "好友B": {"share": 52, "monolog_s": 36, "minutes": 38, "days": 2}}}, {"total_days": 5, "friends": {"好友A": {"share": 46, "monolog_s": 35, "minutes": 30, "days": 2}, "好友B": {"share": 51, "monolog_s": 40, "minutes": 36, "days": 2}, "好友C": {"share": 45, "monolog_s": 30, "minutes": 40, "days": 2}}}, {"total_days": 5, "friends": {"好友A": {"share": 0, "monolog_s": 0, "minutes": 0, "days": 0}, "好友B": {"share": 50, "monolog_s": 39, "minutes": 37, "days": 2}, "好友C": {"share": 48, "monolog_s": 44, "minutes": 80, "days": 4}}}], "rule": ["好友A：minutes、days 下降"], "assistant": {"remind": false, "friend": "", "metric": "none", "sentence": "", "opener": "", "recovery_op": "none", "recovery_value": 0, "trend_note": "这两周和好友A一起说话的时间少了，同期和好友C的多了；和好友B保持平稳，每周有记录的天数一直是5天。", "reason": "好友A两周内从4天/66分钟降到0，同期好友C从无到4天/80分钟，好友B稳定、total_days恒为5，属于交往正常流动；A本周share=0只是没有记录而非谈话内占比下降，且C的share 45-48接近对半，故不提醒，仅给趋势页写中性说明。"}, "errors": []}, {"name": "与好友 A 对话中孩子的占比 46% → 11%，其他好友稳定", "weeks": [{"total_days": 5, "friends": {"好友A": {"share": 46, "monolog_s": 40, "minutes": 55, "days": 4}, "好友B": {"share": 51, "monolog_s": 42, "minutes": 40, "days": 3}}}, {"total_days": 5, "friends": {"好友A": {"share": 45, "monolog_s": 38, "minutes": 58, "days": 4}, "好友B": {"share": 50, "monolog_s": 40, "minutes": 42, "days": 3}}}, {"total_days": 5, "friends": {"好友A": {"share": 24, "monolog_s": 15, "minutes": 52, "days": 4}, "好友B": {"share": 52, "monolog_s": 41, "minutes": 38, "days": 3}}}, {"total_days": 5, "friends": {"好友A": {"share": 11, "monolog_s": 6, "minutes": 54, "days": 4}, "好友B": {"share": 49, "monolog_s": 43, "minutes": 41, "days": 3}}}], "rule": ["好友A：share 下降"], "assistant": {"remind": true, "friend": "好友A", "metric": "share", "sentence": "这两周孩子和好友A一起说话的时长没变，但孩子说话的占比从四成半降到了一成左右。", "opener": "最近你和好友A在一起都聊些什么呀？有什么好玩的也讲给我听听。", "recovery_op": ">=", "recovery_value": 20, "trend_note": "和好友A的说话占比连续两周走低（45→24→11），一起说话的时长和次数照常；和好友B各项保持平稳。", "reason": "只有好友A的 share（46/45→24→11）和最长独白（40→6秒）连续两周下降，时长与天数不变、好友B全项稳定、total_days 照常，排除共同原因和交往流动，属于单一好友变化；绑定 share，恢复线取 20（约上周水平，不要求回到 45）。"}, "errors": []}]/*END*/;
+
+/* 示意部分：昵称、今天的几段谈话。顺序即顶部切换的顺序，real 指向 REAL 的下标。 */
+const NICK = {"好友A":"小雨","好友B":"阿哲","好友C":"小川"};
+const COLOR = {"好友A":"#F08FA0","好友B":"#7F93E8","好友C":"#B77DEE"};
+const UI = [
+  {real:2, tab:"和小雨说得少了", sessions:[
+    {f:"好友A", when:"课间", marked:true,  share:9,  sec:810,  mono:["you",72], gray:40},
+    {f:"好友A", when:"放学路上",             share:14, sec:550,  mono:["you",55], gray:25}], next:{yes:34,no:14}},
+  {real:0, tab:"考试周", sessions:[
+    {f:"好友A", when:"课间", marked:true,  share:46, sec:440,  mono:["me",30],  gray:20},
+    {f:"好友B", when:"放学路上",             share:49, sec:365,  mono:["you",35], gray:15}]},
+  {real:1, tab:"交了新朋友", sessions:[
+    {f:"好友C", when:"课后班", marked:true, share:48, sec:1260, mono:["me",44],  gray:50},
+    {f:"好友B", when:"课间",                 share:50, sec:510,  mono:["you",39], gray:20}]},
+];
+const METRIC = {share:"说话占比", monolog_s:"最长独白", minutes:"一起说话的时长", days:"次数"};
+const UNIT = {share:"%", monolog_s:" 秒", minutes:" 分钟", days:" 天"};
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const S = {ci:0, kid:{view:"home", si:0, guess:50, from:"home"}, par:{tab:"week", reason:null, next:null, removed:{}}};
+const $ = (s, r=document) => r.querySelector(s), $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const nick = s => esc(s).replace(/好友[A-Z]/g, m => NICK[m] || m);
+const cur = () => ({...UI[S.ci], ...REAL[UI[S.ci].real]});
+const weeks = () => cur().weeks, now = () => weeks().at(-1).friends;
+const alive = f => !S.par.removed[S.ci + f];
+const mmss = s => s >= 60 ? `${Math.floor(s/60)} 分${s%60 ? " " + (s%60) + " 秒" : "钟"}` : `${s} 秒`;
+function cheng(v){ if (v <= 2) return "不到 1 成"; if (v >= 98) return "快 10 成";
+  const n = Math.floor(v/10), r = v - n*10;
+  return r < 2.5 ? (n ? `${n} 成` : "不到 1 成") : r < 7.5 ? (n ? `${n} 成半` : "半成") : `${n+1} 成`; }
+const ICON = {
+  chev:'<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
+  back:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  ok:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6FBA2C" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  no:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E05A5A" stroke-width="3.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  star:'<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6L12 17.4 6.1 20.7l1.3-6.6L2.5 9.5l6.6-.8z"/></svg>',
+  flag:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h12l-2.5 4L17 12H5"/></svg>',
+  calm:'<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#19C8B9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8M9 10h.01M15 10h.01"/></svg>',
+};
+const av = (f, sm) => `<span class="av${sm ? " sm" : ""}" style="--c:${COLOR[f]}" aria-hidden="true">${NICK[f][0]}</span>`;
+
+/* ---------- 弹簧：从当前值出发，随时可被打断，松手的速度能接上 ---------- */
+function spring({from, to, velocity=0, response=.38, damping=1, onUpdate, onDone}){
+  if (REDUCED){ onUpdate(to); onDone && onDone(); return {cancel(){}, x:to, v:0}; }
+  const k = (2*Math.PI/response)**2, c = 4*Math.PI*damping/response, span = Math.max(1e-6, Math.abs(to-from), Math.abs(velocity)*.1);
+  const st = {x:from, v:velocity, cancel(){ cancelAnimationFrame(raf); }};
+  let last = performance.now(), raf;
+  const step = t => { const dt = Math.min(.032, (t-last)/1000)/4; last = t;
+    for (let i = 0; i < 4; i++){ st.v += (-k*(st.x-to) - c*st.v)*dt; st.x += st.v*dt; }
+    if (Math.abs(st.x-to) < span*.002 && Math.abs(st.v) < span*.02){ st.x = to; onUpdate(to); onDone && onDone(); return; }
+    onUpdate(st.x); raf = requestAnimationFrame(step); };
+  raf = requestAnimationFrame(step); return st;
+}
+const project = (v, d=.998) => (v/1000)*d/(1-d);
+const rubber = (over, dim, c=.55) => (over*dim*c)/(dim + c*Math.abs(over));
+
+/* ---------- 和过去的自己比 ---------- */
+const sym = sh => Math.min(sh, 100-sh)/50;
+const inti = f => f ? f.minutes*f.days*sym(f.share) : 0;          // 时间 × 天数 × 对称程度
+function arrow(nowV, past){ const base = past.length ? past.reduce((a,b) => a+b, 0)/past.length : nowV;
+  if (!base && !nowV) return "flat"; const d = base ? (nowV-base)/base : 1; return d > .1 ? "up" : d < -.1 ? "down" : "flat"; }
+const ARW = {up:"↑", down:"↓", flat:"→"};
+function series(f, fn){ return weeks().map(w => w.friends[f] ? fn(w.friends[f]) : null); }
+function spark(vals, color, h=44){ const W = 260, pts = vals.map((v, i) => v == null ? null : [vals.length > 1 ? 8 + i*(W-16)/(vals.length-1) : W/2, v]);
+  const real = pts.filter(Boolean), vs = real.map(p => p[1]), max = Math.max(...vs, 1e-6), min = Math.min(...vs), pad = Math.max(max-min, max*.25),
+    lo = min - pad*.6, hi = max + pad*.6, y = v => h - 8 - ((v-lo)/(hi-lo))*(h-16);      // 平稳的线落在中间，只看形状，不标刻度
+  const d = real.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)} ${y(p[1]).toFixed(1)}`).join(" "), e = real.at(-1);
+  return `<svg class="spark" viewBox="0 0 ${W} ${h}" role="img" aria-label="近几周的升降"><path d="${d}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>${real.map(p => `<circle cx="${p[0]}" cy="${y(p[1])}" r="${p === e ? 5.5 : 3}" fill="${p === e ? color : "#FFFDF8"}" stroke="${color}" stroke-width="2"/>`).join("")}</svg>`; }
+
+/* ==================== 孩子页 ==================== */
+const KV = ["home", "guess", "reveal", "friend"];
+function kidGo(v){ S.kid.view = v; const i = KV.indexOf(v);
+  KV.forEach((n, j) => { const el = $("#k-" + n); el.dataset.pos = j < i ? "behind" : j > i ? "ahead" : "active"; el.inert = j !== i; }); }
+const sess = () => cur().sessions.filter(s => alive(s.f));
+const bar = (title, to) => `<div class="bar"><button class="back" data-go="${to}" aria-label="返回">${ICON.back}</button><b>${title}</b></div>`;
+
+function kidHome(){ const ss = sess(), fs = Object.keys(now()).filter(f => alive(f) && now()[f].minutes > 0);
+  $("#k-home").innerHTML = `<div class="body"><div class="hello">小明，<br>欢迎回家</div>
+    <div class="pill">${ICON.ok}已同步 · 录音已删，只留数字</div>
+    <div class="lbl">今天 · 先猜后看</div>
+    ${ss.length ? ss.map((s, i) => `<button class="card" data-sess="${cur().sessions.indexOf(s)}"><div class="row">${av(s.f)}<div class="grow"><div class="t1">和${NICK[s.f]}${s.marked ? `<span class="star">${ICON.star}你双击标过</span>` : ""}</div><div class="t2">${s.when} · 聊了 <span style="white-space:nowrap">${mmss(s.sec)}</span></div></div>${ICON.chev}</div></button>`).join("") : `<div class="card t2">今天没有记录。</div>`}
+    <div class="lbl">我的好友</div>
+    <div class="friends">${fs.map(f => `<button data-friend="${f}">${av(f)}${NICK[f]}</button>`).join("") || `<span class="t2">还没有好友</span>`}</div>
+    <div class="note">只有按了侧键、灯亮着的时候才会录。<br>只算互相加过好友的人。</div></div>`; }
+
+function paint(el, v, g){ el.style.setProperty("--v", v/100); if (g != null) el.style.setProperty("--guess", g/100); }
+function whoLine(s, v){ return `<span>我<i>${cheng(v)}</i></span><span>${NICK[s.f]}<i>${cheng(100-v)}</i></span>`; }
+
+function kidGuess(){ const s = cur().sessions[S.kid.si]; S.kid.guess = 50;
+  $("#k-guess").innerHTML = `${bar("先猜后看", "home")}<div class="body">
+    <div class="q">猜猜这一段，<br>你和${NICK[s.f]}谁说得多？</div>
+    <div class="who" id="g-who">${whoLine(s, 50)}</div>
+    <div class="split" id="g-split" role="slider" tabindex="0" aria-label="我说了几成" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" aria-valuetext="我 5 成"><div class="fill"></div><div class="knob"></div></div>
+    <div class="hint">拖动豆子，左边是你，右边是${NICK[s.f]}</div>
+    <button class="cta" data-go="reveal">猜好了</button></div>`;
+  bindSplit($("#g-split"), s); }
+
+function bindSplit(el, s){ let raw = 50, grab = 0, anim;
+  const set = v => { raw = Math.max(0, Math.min(100, v)); S.kid.guess = Math.round(raw/5)*5;
+    paint(el, raw); $("#g-who").innerHTML = whoLine(s, S.kid.guess); el.setAttribute("aria-valuenow", S.kid.guess); el.setAttribute("aria-valuetext", "我 " + cheng(S.kid.guess)); };
+  const at = e => { const r = el.getBoundingClientRect(); return (e.clientX - grab - r.left)/r.width*100; };
+  el.addEventListener("pointerdown", e => { anim && anim.cancel(); try { el.setPointerCapture(e.pointerId); } catch {} el.classList.add("drag");
+    const k = $(".knob", el).getBoundingClientRect(), cx = k.left + k.width/2;
+    grab = Math.abs(e.clientX - cx) <= 28 ? e.clientX - cx : 0;            // 抓在豆子上：保留抓取偏移；点在别处：豆子过来
+    set(at(e)); });
+  el.addEventListener("pointermove", e => { if (el.classList.contains("drag")) set(at(e)); });
+  const end = e => { if (!el.classList.contains("drag")) return; el.classList.remove("drag");
+    anim = spring({from:raw, to:Math.round(raw/5)*5, response:.25, onUpdate:v => { raw = v; paint(el, v); }}); };
+  el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+  el.addEventListener("keydown", e => { const d = {ArrowLeft:-5, ArrowDown:-5, ArrowRight:5, ArrowUp:5}[e.key];
+    if (d) set(S.kid.guess + d); else if (e.key === "Home") set(0); else if (e.key === "End") set(100); else return; e.preventDefault(); }); }
+
+let revealAnim;
+function kidReveal(){ const s = cur().sessions[S.kid.si], g = S.kid.guess, diff = Math.abs(g - s.share), BAND = 5;
+  const talk = s.sec - s.gray, meSec = Math.round(talk*s.share/100);
+  const msg = diff <= BAND ? `差不多，你猜对了！<small>设备本身也有几个点的误差，这就算一样。</small>`
+    : `你猜你说了 ${cheng(g)}，<br>其实是 ${cheng(s.share)}。<small>${s.share < g ? `${NICK[s.f]}说得比你以为的多。` : `你说得比自己以为的多。`}</small>`;
+  $("#k-reveal").innerHTML = `${bar(`和${NICK[s.f]} · ${s.when}`, "home")}<div class="body">
+    ${s.marked ? `<div class="pill" style="background:#FCEFB4;border-color:#F2D96B;color:var(--on-yellow);margin-top:4px">${ICON.star}这一段是你双击标过的</div>` : ""}
+    <div class="who" id="r-who" style="margin-top:${s.marked ? 22 : 30}px">${whoLine(s, g)}</div>
+    <div class="split ro" id="r-split" aria-hidden="true"><div class="fill"></div><div class="ghost"></div></div>
+    <div class="verdict" id="r-verdict" aria-live="polite">${msg}</div>
+    <div class="card facts">
+      <div class="row">一起说了<b>${mmss(s.sec)}</b></div>
+      <div class="row"><span class="dot" style="--c:var(--me)"></span>我说了<b>${mmss(meSec)}</b></div>
+      <div class="row"><span class="dot" style="--c:var(--you)"></span>${NICK[s.f]}说了<b>${mmss(talk - meSec)}</b></div>
+      <div class="row">最长的一段<b>${s.mono[0] === "me" ? "我" : NICK[s.f]} · ${mmss(s.mono[1])}</b></div>
+      <div class="row"><span class="dot" style="--c:var(--gray)"></span>听不清是谁，没算进去<b>${mmss(s.gray)}</b></div>
+    </div>
+    <button class="cta" data-friend="${s.f}">看看我和${NICK[s.f]}</button><button class="cta ghost" data-go="home">回到今天</button></div>`;
+  const el = $("#r-split"); paint(el, g, g); revealAnim && revealAnim.cancel();
+  setTimeout(() => { revealAnim = spring({from:g, to:s.share, response:.75, onUpdate:v => { paint(el, v); $("#r-who").innerHTML = whoLine(s, Math.round(v)); },
+    onDone:() => $("#r-verdict").classList.add("on")}); }, REDUCED ? 0 : 420); }
+
+function kidFriend(f){ const past = k => series(f, x => x[k]).slice(0, -1).filter(v => v != null), n = now()[f];
+  const a = {t:arrow(n.minutes, past("minutes")), d:arrow(n.days, past("days")), s:arrow(sym(n.share), series(f, x => x.minutes ? sym(x.share) : null).slice(0, -1).filter(v => v != null))};
+  const all = series(f, inti), ai = arrow(all.at(-1), all.slice(0, -1).filter(v => v != null));
+  $("#k-friend").innerHTML = `${bar("", S.kid.from)}<div class="body">
+    <div class="row" style="margin-top:4px">${av(f)}<div><div class="t1" style="font-size:1.2rem">${NICK[f]}</div><div class="t2">好友 · 两边的爸爸妈妈都点过同意</div></div></div>
+    <div class="lbl">我们俩 · 和以前的自己比</div>
+    <div class="card">${spark(all, "var(--me)", 70)}<div class="t2" style="margin-top:6px;text-align:center">${{up:"这周比以前更近了一点", down:"这周比以前少了一些", flat:"这周和以前差不多"}[ai]}</div></div>
+    <div class="parts">
+      <div class="part"><div class="arrow ${a.t}">${ARW[a.t]}</div><div>一起说话<br>的时间</div></div>
+      <div class="part"><div class="arrow ${a.d}">${ARW[a.d]}</div><div>有几天<br>说上了话</div></div>
+      <div class="part"><div class="arrow ${a.s}">${ARW[a.s]}</div><div>两个人<br>说得一样多</div></div>
+    </div>
+    <div class="note">没有分数，没有排名，也不和别人比。<br>只有你和爸爸妈妈看得到。</div></div>`; }
+
+/* ==================== 家长页 ==================== */
+function parent(){ $$(".tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === S.par.tab));
+  $("#p-body").innerHTML = ({week:parWeek, trend:parTrend, trust:parTrust})[S.par.tab](); $("#p-body").scrollTop = 0; timeCtl(); }
+
+function recoveryText(o){ return `和${NICK[o.friend]}聊天时，${METRIC[o.metric]}${o.recovery_op === ">=" ? "回到" : "降到"} ${o.recovery_value}${UNIT[o.metric].trim()} ${o.recovery_op === ">=" ? "以上" : "以下"}`; }
+
+function parWeek(){ const c = cur(), o = c.assistant, total = weeks().at(-1).total_days;
+  let card;
+  if (o.remind && !alive(o.friend)) card = `<div class="card quiet">${ICON.calm}<div class="big">这周不提醒</div><p>和${NICK[o.friend]}的数字，已随好友关系一并删除。</p></div>`;
+  else if (o.remind){ const nowV = now()[o.friend][o.metric], nx = S.par.next && c.next[S.par.next], hit = nx != null && (o.recovery_op === ">=" ? nx >= o.recovery_value : nx <= o.recovery_value);
+    card = `<div class="card remind"><span class="nametag">豆伴助手</span><div class="kicker">这周值得留意的一个变化</div>
+      <div class="say">${nick(o.sentence)}</div>
+      <div class="opener"><b>可以这样开口</b>${nick(o.opener)}</div>
+      <div class="line">${ICON.flag}<span>下周自动对照：${recoveryText(o)}</span></div>
+      ${S.par.reason ? `<div class="done">已记下：${esc(S.par.reason)}。下周的数字出来后自动对照，不用你再做什么。</div>` : `<button class="cta" data-act="talked">聊过了</button>`}
+      <button class="link" data-act="ai">AI 读到了什么？</button></div>
+      ${nx != null ? `<div class="lbl">下一周 · 自动对照</div><div class="card"><div class="t1">${hit ? "恢复了" : "还没有恢复"}</div>
+        <div class="cmp"><div><b>${nowV}${UNIT[o.metric].trim()}</b><span>提醒那一周</span></div><span aria-hidden="true">→</span><div class="${hit ? "hit" : "miss"}"><b>${nx}${UNIT[o.metric].trim()}</b><span>下一周</span></div></div>
+        <div class="t2" style="margin-top:12px">${hit ? `过了恢复线（${o.recovery_value}${UNIT[o.metric].trim()}）。这条提醒到此结束。` : `还没到恢复线（${o.recovery_value}${UNIT[o.metric].trim()}）。下周由助手决定：换一种开口方式、调低恢复线，或者不再提。`}</div></div>` : ""}`; }
+  else card = `<div class="card quiet">${ICON.calm}<div class="big">这周不提醒</div><p>没有需要特别留意的变化。</p>
+      ${o.trend_note ? `<div class="tnote"><b>趋势页的一句话</b>${nick(o.trend_note)}</div>` : ""}
+      <button class="link" data-act="ai">AI 读到了什么？为什么不提醒？</button></div>`;
+  return `<div class="hello">小明的这一周</div><div class="sub">本周有记录 ${total} 天 · 每周最多一条提醒</div><div style="height:18px"></div>${card}
+    <div class="note">这里没有播放键。录音算完就删，<br>留下的只有数字。</div>`; }
+
+function parTrend(){ const fs = [...new Set(weeks().flatMap(w => Object.keys(w.friends)))].filter(alive);
+  return `<div class="hello">趋势</div><div class="sub">只和孩子自己的过去比，不和别人比</div><div style="height:18px"></div>` + fs.map(f => { const n = now()[f], sh = series(f, x => x.minutes ? x.share : null), real = sh.filter(v => v != null);
+    const past = k => series(f, x => x[k]).slice(0, -1).filter(v => v != null), am = arrow(n ? n.minutes : 0, past("minutes")), ad = arrow(n ? n.days : 0, past("days"));
+    return `<div class="card trend"><div class="row">${av(f, 1)}<div class="grow t1">${NICK[f]}</div><div class="t2">${n && n.minutes ? `孩子说了 ${n.share}%` : ""}</div></div>
+      ${n && n.minutes ? `<div style="margin-top:10px">${spark(sh, COLOR[f])}</div><div class="t2" style="display:flex;justify-content:space-between"><span>${real[0]}%</span><span>说话占比 · 近 ${sh.length} 周</span><span>${real.at(-1)}%</span></div>
+      <div class="nums"><span>一起说话 <b>${n.minutes} 分钟</b> <span class="${am}">${ARW[am]}</span></span><span>有记录 <b>${n.days} 天</b> <span class="${ad}">${ARW[ad]}</span></span></div>`
+      : `<div class="t2" style="margin-top:10px">这周没有和${NICK[f]}的记录。<br>孩子按键才录，没有记录不等于没在一起。</div>`}</div>`; }).join(""); }
+
+function parTrust(){ const fs = [...new Set(weeks().flatMap(w => Object.keys(w.friends)))].filter(alive);
+  return `<div class="hello">好友与录音</div><div class="sub">被录的孩子事先知道、当场知道、事后能删</div>
+    <div class="lbl">录音在哪</div><div class="card">
+      <div class="check">${ICON.ok}<span>手机里的录音：<b>0 个</b>。算完就删，删完回读确认过。</span></div>
+      <div class="check">${ICON.ok}<span>豆子里的录音：<b>0 个</b>。</span></div>
+      <div class="check">${ICON.ok}<span>这个 App 没有播放键，家长听不到任何一句。</span></div></div>
+    <div class="lbl">怎么才会录</div><div class="card">
+      <div class="check">${ICON.ok}<span>孩子自己按侧键，灯亮了才录；App 没法远程打开豆子。</span></div>
+      <div class="check">${ICON.ok}<span>开录时两个人各说一句「我是××，开始啦」。跳过这一句，算不出数。</span></div></div>
+    <div class="lbl">好友</div>` + (fs.map(f => `<div class="card"><div class="row">${av(f, 1)}<div class="grow"><div class="t1">${NICK[f]}</div><div class="t2">双方家长已确认</div></div><button class="link" style="margin:0;color:var(--warn)" data-act="remove" data-f="${f}">解除</button></div></div>`).join("") || `<div class="card t2">没有好友了。</div>`); }
+
+function timeCtl(){ const c = cur(), o = c.assistant, show = o.remind && alive(o.friend) && S.par.reason && S.par.tab === "week";
+  $("#time").innerHTML = show ? `<span>演示：快进到下一周 →</span><button data-next="yes" aria-pressed="${S.par.next === "yes"}">恢复了</button><button data-next="no" aria-pressed="${S.par.next === "no"}">还没有</button>` : ""; }
+
+/* ---------- 弹层内容 ---------- */
+function aiSheet(){ const c = cur(), o = c.assistant, ws = weeks();
+  const rows = ws.map((w, i) => `<tr class="wk"><td colspan="5">${i === ws.length-1 ? "本周" : `${ws.length-1-i} 周前`} · 有记录 ${w.total_days} 天</td></tr>` +
+    Object.entries(w.friends).map(([f, m]) => `<tr class="${i === ws.length-1 ? "now" : ""}"><td>${f}</td><td>${m.share}</td><td>${m.monolog_s}</td><td>${m.minutes}</td><td>${m.days}</td></tr>`).join("")).join("");
+  const checks = c.errors.length ? c.errors.map(e => `<div class="check">${ICON.no}<span>${esc(e)}</span></div>`).join("")
+    : ["指标在白名单内（四项之一，亲密度组合分不在内）", o.remind ? "恢复线下周测得出，而且本周还没满足" : "不提醒：没有恢复线要查", "没有禁用措辞（不判定、不贴标签）"].map(t => `<div class="check">${ICON.ok}<span>${t}</span></div>`).join("");
+  const zh = s => esc(s).replace(/minutes/g, "时长").replace(/days/g, "次数").replace(/share/g, "占比");
+  return ["AI 读到了什么", `<h4>发给助手的全部内容</h4>
+    <table class="tbl mono"><tr><th>代号</th><th>占比%</th><th>独白s</th><th>时长min</th><th>天数</th></tr>${rows}</table>
+    <h4>从来不发</h4><div class="never"><span>音频</span><span>转写文字</span><span>摘要</span><span>姓名</span><span>声纹</span></div>
+    <h4>助手的决定 · ${o.remind ? "提醒" : "本周不提醒"}</h4><div class="dev"><b>它给开发者的理由：</b>${esc(o.reason)}</div>
+    <h4>程序校验</h4>${checks}
+    <h4>同一批数字，固定阈值规则会报 ${c.rule.length} 条</h4>${c.rule.map(r => `<div class="rule mono">${zh(r)}</div>`).join("")}
+    <div class="note" style="text-align:left">模型 claude-fable-5-1，2026-09-19 实测输出；数字为示意。</div>`]; }
+const reasonSheet = () => ["聊过了 · 大概是因为？", ["换座位了", "闹别扭了", "没什么事"].map(r => `<button class="opt" data-reason="${r}">${r}</button>`).join("") + `<div class="note" style="text-align:left">选一个就行。助手下周会把它当成一条输入，比如「换座位了」就把现状当新的基线。</div>`];
+const removeSheet = f => [`解除和${NICK[f]}的好友关系？`, `<p class="t2" style="font-size:.9rem;line-height:1.7">解除后，和${NICK[f]}有关的全部数字会一并删除，两边都看不到了，不能恢复。</p><button class="cta danger" data-confirm-remove="${f}">解除并删除数字</button><button class="cta ghost" data-act="close">再想想</button>`];
+
+/* ---------- 弹层：弹簧驱动，拖得动，松手看速度的方向 ---------- */
+const sheet = $(".sheet"), scrim = $(".scrim"), push = $(".push");
+let sp = 1, sAnim, lastFocus;                                    // sp：0 全开，1 全关
+function sheetPaint(p){ sp = p; const o = Math.max(0, 1-p); sheet.style.transform = `translateY(${p*105}%)`; scrim.style.opacity = o*.38;
+  push.style.transform = `scale(${1 - Math.min(1, o)*.045})`; push.style.borderRadius = o > .01 ? "24px" : ""; push.style.overflow = o > .01 ? "hidden" : ""; }
+function sheetTo(target, velocity=0){ sAnim && sAnim.cancel(); scrim.style.pointerEvents = target ? "none" : "auto";
+  sAnim = spring({from:sp, to:target, velocity, response:.34, damping:velocity ? .82 : 1, onUpdate:sheetPaint,
+    onDone:() => { if (target){ sheet.hidden = true; $("#p-main").inert = false; $(".tabs").inert = false; lastFocus && lastFocus.focus({preventScroll:true}); } }}); }
+function openSheet([title, html]){ lastFocus = document.activeElement; $("#sh-title").textContent = title; $(".in", sheet).innerHTML = html; $(".in", sheet).scrollTop = 0;
+  sheet.hidden = false; $("#p-main").inert = true; $(".tabs").inert = true; sheetTo(0); sheet.setAttribute("tabindex", "-1"); sheet.focus({preventScroll:true}); }
+const closeSheet = (v=0) => sheetTo(1, v);
+sheet.hidden = true;
+(() => { const g = $(".grab"); let y0, h, hist;
+  g.addEventListener("pointerdown", e => { sAnim && sAnim.cancel(); try { g.setPointerCapture(e.pointerId); } catch {} h = sheet.offsetHeight*1.05; y0 = e.clientY - sp*h; hist = [[e.clientY, e.timeStamp]]; });
+  g.addEventListener("pointermove", e => { if (!hist) return; let d = e.clientY - y0; if (d < 0) d = -rubber(-d, h, .3);
+    sheetPaint(d/h); hist.push([e.clientY, e.timeStamp]); if (hist.length > 5) hist.shift(); });
+  const end = e => { if (!hist) return; const a = hist[0], b = hist.at(-1), v = b[1] > a[1] ? (b[0]-a[0])/(b[1]-a[1])*1000 : 0; hist = null;
+    const landing = sp*h + project(v), close = landing > h*.45; sheetTo(close ? 1 : 0, v/h); };
+  g.addEventListener("pointerup", end); g.addEventListener("pointercancel", end); })();
+scrim.addEventListener("click", () => closeSheet());
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !sheet.hidden) closeSheet(); });
+
+/* ==================== 事件与启动 ==================== */
+function resetAll(){ S.kid = {view:"home", si:0, guess:50, from:"home"}; S.par.tab = "week"; S.par.reason = null; S.par.next = null;
+  if (!sheet.hidden){ sAnim && sAnim.cancel(); sheetPaint(1); sheet.hidden = true; $("#p-main").inert = false; $(".tabs").inert = false; }
+  kidHome(); kidGo("home"); parent(); }
+$("#cases").innerHTML = UI.map((u, i) => `<button data-ci="${i}" aria-pressed="${i === 0}">${u.tab}</button>`).join("");
+document.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; const d = b.dataset;
+  if (d.ci != null){ S.ci = +d.ci; $$("#cases button").forEach(x => x.setAttribute("aria-pressed", x === b)); resetAll(); }
+  else if (d.show){ $(".stage").dataset.show = d.show; $$(".which button").forEach(x => x.setAttribute("aria-pressed", x === b)); }
+  else if (d.sess != null){ S.kid.si = +d.sess; kidGuess(); kidGo("guess"); }
+  else if (d.go === "reveal"){ kidReveal(); kidGo("reveal"); }
+  else if (d.go){ if (d.go === "home") kidHome(); kidGo(d.go); }
+  else if (d.friend){ S.kid.from = S.kid.view; kidFriend(d.friend); kidGo("friend"); }
+  else if (d.tab){ S.par.tab = d.tab; parent(); }
+  else if (d.act === "ai") openSheet(aiSheet());
+  else if (d.act === "talked") openSheet(reasonSheet());
+  else if (d.act === "remove") openSheet(removeSheet(d.f));
+  else if (d.act === "close") closeSheet();
+  else if (d.reason){ S.par.reason = d.reason; closeSheet(); parent(); }
+  else if (d.confirmRemove){ S.par.removed[S.ci + d.confirmRemove] = true; closeSheet(); parent(); kidHome(); kidGo("home"); }
+  else if (d.next){ S.par.next = S.par.next === d.next ? null : d.next; parent(); const el = $("#p-body"); el.scrollTo({top:el.scrollHeight, behavior:REDUCED ? "auto" : "smooth"}); } });
+if (!REAL.length) document.body.innerHTML = '<p style="padding:40px;text-align:center">还没有注入真实数据（REAL 为空）。</p>'; else resetAll();
+</script>
+</body>
+</html>

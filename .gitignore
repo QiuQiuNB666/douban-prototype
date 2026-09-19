@@ -1,0 +1,12 @@
+# 白名单：只有原型和实验脚本进仓库。
+# 不进：官方 Demo 克隆（SoundcoreSDKDemo/，赛事材料）、交接.md（含 SSH 地址、Linear 邀请链接、飞书 token）、预赛文档（以后会有个人信息）。
+/*
+!/.gitignore
+!/README.md
+!/原型/
+!/实验/
+__pycache__/
+*.m4a
+*.wav
+*.mp3
+.DS_Store

@@ -1,0 +1,201 @@
+{
+  "source": "Claude Code 子代理（Workflow，结构化输出），模型 claude-fable-5-1，2026-09-19；非直接调 API；每次单独判，不含重试",
+  "at": "2026-09-19 03:32:47",
+  "results": [
+    {
+      "case_index": 0,
+      "run": 1,
+      "out": {
+        "remind": false,
+        "friend": "",
+        "metric": "none",
+        "sentence": "",
+        "opener": "",
+        "recovery_op": "none",
+        "recovery_value": 0,
+        "trend_note": "本周有记录的天数从5天变为3天，和三位好友一起说话的时长同步减少，各段关系里的说话占比都保持平稳。",
+        "reason": "total_days 从5降到3，三位好友的 minutes 和 days 同比例一起下降（约减半），而 share 全部稳定在44-52%的历史区间内、monolog_s 同步小幅回落，属于所有好友一起变的外部共同原因，没有任何单独一位好友的变化，所以不提醒。"
+      },
+      "case": "考试周，所有好友的时长一起降了一半",
+      "rule": [
+        "好友A：minutes、days 下降",
+        "好友B：minutes、days 下降",
+        "好友C：minutes、days 下降"
+      ],
+      "errors": [],
+      "as_designed": true
+    },
+    {
+      "case_index": 0,
+      "run": 2,
+      "out": {
+        "remind": false,
+        "friend": "",
+        "metric": "none",
+        "sentence": "",
+        "opener": "",
+        "recovery_op": "none",
+        "recovery_value": 0,
+        "trend_note": "本周有记录的天数从5天变为3天，和三位好友一起说话的时长同步减少；每段关系里的说话占比都和前几周差不多。",
+        "reason": "total_days 从5降到3，三位好友的 minutes 和 days 同比例一起下降（约减半），而优先指标 share 三人均稳定在±2点内（46/49/47），属于所有好友一起变的外部共同原因，没有任何单一好友的独立变化，故不提醒。"
+      },
+      "case": "考试周，所有好友的时长一起降了一半",
+      "rule": [
+        "好友A：minutes、days 下降",
+        "好友B：minutes、days 下降",
+        "好友C：minutes、days 下降"
+      ],
+      "errors": [],
+      "as_designed": true
+    },
+    {
+      "case_index": 0,
+      "run": 3,
+      "out": {
+        "remind": false,
+        "friend": "",
+        "metric": "none",
+        "sentence": "",
+        "opener": "",
+        "recovery_op": "none",
+        "recovery_value": 0,
+        "trend_note": "本周有记录的天数从 5 天变为 3 天，和三位好友一起说话的时长同步减少，各段关系里的说话占比保持平稳。",
+        "reason": "total_days 从 5 降到 3，三位好友的 minutes 和 days 同比例一起降（约减半），而优先指标 share 三人都稳定在 46/49/47（与前三周差不超过 3 个点），monolog_s 的小幅下降也是三人同向，属于所有好友一起变的外部共同原因，没有任何单独一位好友的变化，所以不提醒。"
+      },
+      "case": "考试周，所有好友的时长一起降了一半",
+      "rule": [
+        "好友A：minutes、days 下降",
+        "好友B：minutes、days 下降",
+        "好友C：minutes、days 下降"
+      ],
+      "errors": [],
+      "as_designed": true
+    },
+    {
+      "case_index": 1,
+      "run": 1,
+      "out": {
+        "remind": false,
+        "friend": "",
+        "metric": "none",
+        "sentence": "",
+        "opener": "",
+        "recovery_op": "none",
+        "recovery_value": 0,
+        "trend_note": "这两周和好友A一起说话的时间少了，同期和好友C的多了；和好友B保持平稳，每周有记录的天数一直是5天。",
+        "reason": "好友A两周内从4天/66分钟降到0，同期好友C从无到4天/80分钟，好友B稳定、total_days恒为5，属于交往正常流动；A本周share=0只是没有记录而非谈话内占比下降，且C的share 45-48接近对半，故不提醒，仅给趋势页写中性说明。"
+      },
+      "case": "和好友 A 的时长降到 0，同期和新好友 C 从 0 涨到 80 分钟，总次数照常",
+      "rule": [
+        "好友A：minutes、days 下降"
+      ],
+      "errors": [],
+      "as_designed": true
+    },
+    {
+      "case_index": 1,
+      "run": 2,
+      "out": {
+        "remind": false,
+        "friend": "",
+        "metric": "none",
+        "sentence": "",
+        "opener": "",
+        "recovery_op": "none",
+        "recovery_value": 0,
+        "trend_note": "近两周和好友A一起说话的记录逐步减少，同期和好友C的记录增多，和好友B保持平稳，每周总记录天数照常。",
+        "reason": "好友A两周内从4天/70分钟降到0，但同期好友C从无到4天/80分钟、好友B稳定、total_days一直为5，属于交往正常流动；A本周share=0只是没有记录而非谈话内占比变化，因此不提醒，仅给趋势页一句中性说明。"
+      },
+      "case": "和好友 A 的时长降到 0，同期和新好友 C 从 0 涨到 80 分钟，总次数照常",
+      "rule": [
+        "好友A：minutes、days 下降"
+      ],
+      "errors": [],
+      "as_designed": true
+    },
+    {
+      "case_index": 1,
+      "run": 3,
+      "out": {
+        "remind": false,
+        "friend": "",
+        "metric": "none",
+        "sentence": "",
+        "opener": "",
+        "recovery_op": "none",
+        "recovery_value": 0,
+        "trend_note": "近两周和好友A一起说话的记录变少，同期和好友C的时间变多；和好友B保持平稳，每周有记录的天数一直是5天。",
+        "reason": "好友A两周内从4天/66分钟降到0，同期好友C从无到4天/80分钟，好友B稳定，total_days一直为5，符合\"一位少了、另一位多了、总次数照常\"的正常流动；A本周share=0是因为没有记录，不是谈话内占比下降，所以不提醒，只给趋势页写一句中性说明。"
+      },
+      "case": "和好友 A 的时长降到 0，同期和新好友 C 从 0 涨到 80 分钟，总次数照常",
+      "rule": [
+        "好友A：minutes、days 下降"
+      ],
+      "errors": [],
+      "as_designed": true
+    },
+    {
+      "case_index": 2,
+      "run": 1,
+      "out": {
+        "remind": true,
+        "friend": "好友A",
+        "metric": "share",
+        "sentence": "这两周孩子和好友A一起说话的时长没变，但孩子说话的占比从四成半降到了一成左右。",
+        "opener": "最近你和好友A在一起都聊些什么呀？有什么好玩的也讲给我听听。",
+        "recovery_op": ">=",
+        "recovery_value": 20,
+        "trend_note": "和好友A的说话占比连续两周走低（45→24→11），一起说话的时长和次数照常；和好友B各项保持平稳。",
+        "reason": "只有好友A的 share（46/45→24→11）和最长独白（40→6秒）连续两周下降，时长与天数不变、好友B全项稳定、total_days 照常，排除共同原因和交往流动，属于单一好友变化；绑定 share，恢复线取 20（约上周水平，不要求回到 45）。"
+      },
+      "case": "与好友 A 对话中孩子的占比 46% → 11%，其他好友稳定",
+      "rule": [
+        "好友A：share 下降"
+      ],
+      "errors": [],
+      "as_designed": true
+    },
+    {
+      "case_index": 2,
+      "run": 2,
+      "out": {
+        "remind": true,
+        "friend": "好友A",
+        "metric": "share",
+        "sentence": "这两周和好友A在一起时，孩子说话的比例从四成半降到一成左右，一起的时间和次数没变；和好友B照常。",
+        "opener": "最近和好友A一起都玩些什么呀？讲一件你觉得好玩的给我听听。",
+        "recovery_op": ">=",
+        "recovery_value": 20,
+        "trend_note": "和好友A一起的时长与次数平稳，孩子的说话占比连续两周走低（45%→24%→11%），最长独白同步变短；和好友B各项平稳。",
+        "reason": "只有好友A的 share（46/45→24→11）和 monolog_s（40→6）连续两周下降，minutes、days 与 total_days 不变，好友B全程稳定，既非共同外因也非交往流动，属于单一好友变化；绑定优先指标 share，恢复线取 20（约回到上周水平，不要求回到 45）。"
+      },
+      "case": "与好友 A 对话中孩子的占比 46% → 11%，其他好友稳定",
+      "rule": [
+        "好友A：share 下降"
+      ],
+      "errors": [],
+      "as_designed": true
+    },
+    {
+      "case_index": 2,
+      "run": 3,
+      "out": {
+        "remind": true,
+        "friend": "好友A",
+        "metric": "share",
+        "sentence": "这两周孩子和好友A在一起的时间没变，但说话占比从四成半降到了一成左右。",
+        "opener": "最近和好友A在一起的时候，你们一般都聊些什么、玩些什么呀？",
+        "recovery_op": ">=",
+        "recovery_value": 20,
+        "trend_note": "和好友A的时长、次数与往常一样，说话占比连续两周走低；和好友B各项保持平稳。",
+        "reason": "只有好友A的 share 连续两周下降（46→45→24→11），monolog_s 同步下降（40→6），而 minutes、days 稳定，好友B四项都稳定，total_days 不变。这是单一好友的变化，不是共同外因，也不是交往流动。所以提醒并绑定 share。恢复线定在 20，接近上周的 24，不要求回到原值 45。"
+      },
+      "case": "与好友 A 对话中孩子的占比 46% → 11%，其他好友稳定",
+      "rule": [
+        "好友A：share 下降"
+      ],
+      "errors": [],
+      "as_designed": true
+    }
+  ]
+}
