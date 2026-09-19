@@ -125,6 +125,8 @@ button.card+button.card{margin-top:15px}
 .split.ro{cursor:default}.split.ro .knob{display:none}
 .split .ghost{position:absolute;top:-10px;bottom:-10px;left:calc(var(--guess)*100%);width:0;border-left:3px dashed var(--ink)}
 .split .ghost::after{content:"你猜的";position:absolute;bottom:-20px;left:-22px;width:44px;font-size:.68rem;font-weight:900;text-align:center}
+.strip{display:flex;height:18px;border-radius:9px;overflow:hidden;background:var(--white);border:2px solid var(--line)}.strip i{flex:1}.strip .a{background:var(--me)}.strip .b{background:var(--you)}.strip .q{background:var(--gray)}
+button.card:disabled{opacity:.7;cursor:progress}
 .hint{margin-top:16px;text-align:center;font-size:.8rem;font-weight:600;color:var(--ink3)}
 .verdict{margin-top:40px;text-align:center;font-size:1.22rem;font-weight:900;line-height:1.35;opacity:0;transform:translateY(6px) scale(.98);transition:opacity .4s,transform .4s var(--ease);text-wrap:balance}
 .verdict.on{opacity:1;transform:none}
@@ -236,6 +238,7 @@ details.dev summary{cursor:pointer;font-weight:800;color:var(--ink);border-radiu
       <div class="view" id="k-guess"></div>
       <div class="view" id="k-reveal"></div>
       <div class="view" id="k-friend"></div>
+      <input type="file" id="rec" accept="audio/*,video/*,.m4a,.wav,.mp3,.aac,.caf,.ogg,.flac" hidden>
     </div></div>
   </section>
 
@@ -335,29 +338,45 @@ const gone = () => allF().some(f => !alive(f));                 // 有好友被�
 function kidGo(v){ const had = $("#kid").contains(document.activeElement); S.kid.view = v; const i = KV.indexOf(v);
   KV.forEach((n, j) => { const el = $("#k-" + n); el.dataset.pos = j < i ? "behind" : j > i ? "ahead" : "active"; el.inert = j !== i; });
   if (had){ const t = $("#k-" + v); t.tabIndex = -1; t.focus({preventScroll:true}); } }
-const sess = () => cur().sessions.filter(s => alive(s.f)).sort((a, b) => !!b.marked - !!a.marked);   // 在豆子上双击标过的排最前
+const LIVE = [];                                                // 真录音算出来的几段：真数字，不属于任何示意情形
+const SESS = () => [...LIVE, ...cur().sessions];
+const nm = s => s.name || NICK[s.f];
+const avS = s => s.real ? `<span class="av" style="--c:var(--teal-d)" aria-hidden="true">真</span>` : av(s.f);
+const sess = () => SESS().filter(s => s.real || alive(s.f)).sort((a, b) => !!b.real - !!a.real || !!b.marked - !!a.marked);   // 真录音最前，其次是双击标过的
 const bar = (title, to) => `<div class="bar"><button class="back" data-go="${to}" aria-label="返回">${ICON.back}</button><b>${title}</b></div>`;
 
 function kidHome(){ const ss = sess(), fs = allF().filter(alive);
   $("#k-home").innerHTML = `<div class="body"><div class="hello">小明，<br>欢迎回家</div>
     ${S.par.delFail ? `<div class="pill bad">${ICON.no}豆子里还有 1 个录音没删掉</div>` : `<div class="pill">${ICON.ok}豆子已同步 · 录音已删，只留数字</div>`}
+    ${S.live ? upCard() : ""}
     <div class="lbl">今天 · 先猜后看 · 双击标过的排最前</div>
-    ${ss.length ? ss.map(s => `<button class="card" data-sess="${cur().sessions.indexOf(s)}"><div class="row">${av(s.f)}<div class="grow"><div class="t1">和${NICK[s.f]}${s.marked ? `<span class="star">${ICON.star}你双击标过</span>` : ""}</div><div class="t2">${s.when} · 聊了 <span style="white-space:nowrap">${mmss(s.sec - s.gray)}</span></div></div>${ICON.chev}</div></button>`).join("") : `<div class="card t2">今天没有记录。</div>`}
+    ${ss.length ? ss.map(s => `<button class="card" data-sess="${SESS().indexOf(s)}"><div class="row">${avS(s)}<div class="grow"><div class="t1">和${nm(s)}${s.real ? `<span class="star" style="background:var(--teal-soft);border-color:#9ADFD6;color:var(--on-teal)">真录音</span>` : s.marked ? `<span class="star">${ICON.star}你双击标过</span>` : ""}</div><div class="t2">${s.when} · 聊了 <span style="white-space:nowrap">${mmss(s.sec - s.gray)}</span></div></div>${ICON.chev}</div></button>`).join("") : `<div class="card t2">今天没有记录。</div>`}
     <div class="lbl">我的好友</div>
     <div class="friends">${fs.map(f => `<button data-friend="${f}">${av(f)}${NICK[f]}</button>`).join("") || `<span class="t2">好友都解除了</span>`}</div>
     <div class="note">只有按了豆子的侧键、灯亮着的时候才会录。<br>开录时你们俩各说一句「我是××，开始啦」。<br>只算互相加过好友的人。</div></div>`; }
 
+function upCard(){ const u = S.up;
+  return `<div class="lbl">真的算一段</div><button class="card" data-act="pick" ${u && u.busy ? "disabled" : ""}><div class="row"><span class="av" style="--c:var(--teal-d)" aria-hidden="true">真</span><div class="grow">
+    <div class="t1">${u && u.busy ? "正在算…" : "用一段真录音试试"}</div>
+    <div class="t2">${u && u.busy ? esc(u.name) : u && u.error ? `<span style="color:#8E2B2B">没算出来：${esc(u.error)}</span>` : "传一段两个人的对话，电脑真的去算。算完就删，只留数字。"}</div></div>${ICON.chev}</div></button>`; }
+async function upload(file){ S.up = {busy:true, name:file.name}; kidHome();
+  try { const r = await fetch("/api/analyze", {method:"POST", body:file, headers:{"X-Ext":(file.name.split(".").pop() || "").slice(0, 8)}}), d = await r.json();
+    if (!r.ok) throw new Error(d.error || "服务出错了");
+    LIVE.unshift({real:true, f:"好友A", name:"对方", when:"真录音", share:Math.round(d.share), sec:Math.round(d.me + d.you + d.gray), gray:Math.round(d.gray),
+      meSec:Math.round(d.me), youSec:Math.round(d.you), mono:[d.mono_who, Math.round(d.mono)], strip:d.strip, warn:d.warnings, mode:d.mode, sep:d.sep_db, took:d.seconds, file:file.name});
+    S.up = null; kidHome(); S.kid.si = 0; kidGuess(); kidGo("guess");
+  } catch (e) { S.up = {error:e.message === "Failed to fetch" ? "连不上本机的分析服务" : e.message}; kidHome(); } }
 function paint(el, v, g){ el.style.setProperty("--v", v/100); if (g != null) el.style.setProperty("--guess", g/100); }
-function whoLine(s, v){ return `<span>我<i>${cheng(v)}</i></span><span>${NICK[s.f]}<i>${cheng(100-v)}</i></span>`; }
+function whoLine(s, v){ return `<span>我<i>${cheng(v)}</i></span><span>${nm(s)}<i>${cheng(100-v)}</i></span>`; }
 
-function kidGuess(){ const s = cur().sessions[S.kid.si]; S.kid.guess = 50;
+function kidGuess(){ const s = SESS()[S.kid.si]; S.kid.guess = 50;
   $("#k-guess").innerHTML = `${bar("先猜后看", "home")}<div class="body">
-    <div class="q">猜猜这一段，<br>你和${NICK[s.f]}谁说得多？</div>
+    <div class="q">猜猜这一段，<br>你和${nm(s)}谁说得多？</div>
     <div class="who" id="g-who">${whoLine(s, 50)}</div>
     <div class="split" id="g-split" role="slider" tabindex="0" aria-label="我说了几成" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" aria-valuetext="我 5 成"><div class="fill"></div><div class="knob"></div></div>
-    <div class="hint">拖动滑块，左边是你，右边是${NICK[s.f]}。<br>1 成就是 10 份里的 1 份。</div>
+    <div class="hint">拖动滑块，左边是你，右边是${nm(s)}。<br>1 成就是 10 份里的 1 份。</div>
     <button class="cta" data-go="reveal">猜好了</button>
-    <div class="note">豆子戴在你领口：近的声音算你，<br>远的算${NICK[s.f]}，不认声音。</div></div>`;
+    <div class="note">豆子戴在你领口：近的声音算你，<br>远的算${nm(s)}，不认声音。</div></div>`;
   bindSplit($("#g-split"), s); }
 
 function bindSplit(el, s){ let raw = 50, grab = 0, anim;
@@ -377,23 +396,28 @@ function bindSplit(el, s){ let raw = 50, grab = 0, anim;
     if (d) set(S.kid.guess + d); else if (e.key === "Home") set(0); else if (e.key === "End") set(100); else return; e.preventDefault(); }); }
 
 let revealAnim, revealTimer;
-function kidReveal(){ const s = cur().sessions[S.kid.si], g = S.kid.guess, diff = Math.abs(g - s.share), BAND = 5;
-  const talk = s.sec - s.gray, meSec = Math.round(talk*s.share/100); S.kid.gap = g - s.share;
+function kidReveal(){ const s = SESS()[S.kid.si], g = S.kid.guess, diff = Math.abs(g - s.share), BAND = 5;
+  const talk = s.sec - s.gray, meSec = s.real ? s.meSec : Math.round(talk*s.share/100); S.kid.gap = g - s.share;
   const msg = diff <= BAND ? `差不多，你猜对了！<small>豆子自己也会量偏一点点，这就算猜对了。</small>`
-    : `你猜你说了 ${cheng(g)}，<br>其实是 ${cheng(s.share)}。<small>${s.share < g ? `${NICK[s.f]}说得比你以为的多。` : `你说得比自己以为的多。`}</small>`;
-  $("#k-reveal").innerHTML = `${bar(`和${NICK[s.f]} · ${s.when}`, "home")}<div class="body">
-    ${s.marked ? `<div class="pill" style="background:#FCEFB4;border-color:#F2D96B;color:var(--on-yellow);margin-top:4px;border-radius:16px">${ICON.star}这一段是你在豆子上双击标的，所以排最前、先问它</div>` : ""}
-    <div class="who" id="r-who" style="margin-top:${s.marked ? 22 : 30}px">${whoLine(s, g)}</div>
+    : `你猜你说了 ${cheng(g)}，<br>其实是 ${cheng(s.share)}。<small>${s.share < g ? `${nm(s)}说得比你以为的多。` : `你说得比自己以为的多。`}</small>`;
+  $("#k-reveal").innerHTML = `${bar(`和${nm(s)} · ${s.when}`, "home")}<div class="body">
+    ${s.real ? `<div class="pill" style="background:var(--teal-soft);border-color:#9ADFD6;color:var(--on-teal);margin-top:4px;border-radius:16px">${ICON.ok}真录音，刚刚算的（用时 ${s.took} 秒）。录音已删，只留下面这些数字</div>`
+      : s.marked ? `<div class="pill" style="background:#FCEFB4;border-color:#F2D96B;color:var(--on-yellow);margin-top:4px;border-radius:16px">${ICON.star}这一段是你在豆子上双击标的，所以排最前、先问它</div>` : ""}
+    <div class="who" id="r-who" style="margin-top:${s.marked || s.real ? 22 : 30}px">${whoLine(s, g)}</div>
     <div class="split ro" id="r-split" aria-hidden="true"><div class="fill"></div><div class="ghost"></div></div>
     <div class="verdict" id="r-verdict" aria-live="polite">${msg}</div>
+    ${s.real ? `<div class="lbl" style="margin-top:20px">时间线 · 谁在什么时候说</div><div class="strip" role="img" aria-label="整段录音的时间线">${[...s.strip].map(c => `<i class="${{A:"a", B:"b", "?":"q"}[c] || ""}"></i>`).join("")}</div>
+      <div class="t2" style="display:flex;justify-content:space-between;margin-top:4px"><span>开始</span><span>${mmss(s.sec)} 有人在说</span><span>结束</span></div>
+      ${s.warn.map(w => `<div class="tnote" style="margin-top:10px"><b>照实说明</b>${esc(w)}</div>`).join("")}` : ""}
     <div class="card facts">
       <div class="row">一起说了<b>${mmss(talk)}</b></div>
       <div class="row"><span class="dot" style="--c:var(--me)"></span>我说了<b>${mmss(meSec)}</b></div>
-      <div class="row"><span class="dot" style="--c:var(--you)"></span>${NICK[s.f]}说了<b>${mmss(talk - meSec)}</b></div>
-      <div class="row">一口气说得最久的<b>${s.mono[0] === "me" ? "我" : NICK[s.f]} · ${mmss(s.mono[1])}</b></div>
+      <div class="row"><span class="dot" style="--c:var(--you)"></span>${nm(s)}说了<b>${mmss(talk - meSec)}</b></div>
+      <div class="row">一口气说得最久的<b>${s.mono[0] === "me" ? "我" : nm(s)} · ${mmss(s.mono[1])}</b></div>
       <div class="row"><span class="dot" style="--c:var(--gray)"></span>分不清远近，没算进去<b>${mmss(s.gray)}</b></div>
     </div>
-    <button class="cta" data-friend="${s.f}">看看我和${NICK[s.f]}</button><button class="cta ghost" data-go="home">回到今天</button></div>`;
+    ${s.real ? `<div class="note">这一段不进任何好友的趋势：还不知道对面是谁。<br>两个人声音差 ${s.sep.toFixed(0)} dB · 校准方式：${s.mode === "opening" ? "开头两句" : "自动分两堆"}</div><button class="cta" data-go="home">回到今天</button>`
+      : `<button class="cta" data-friend="${s.f}">看看我和${nm(s)}</button><button class="cta ghost" data-go="home">回到今天</button>`}</div>`;
   const el = $("#r-split"); paint(el, g, g); revealAnim && revealAnim.cancel(); clearTimeout(revealTimer);
   revealTimer = setTimeout(() => { revealAnim = spring({from:g, to:s.share, response:.75, onUpdate:v => { paint(el, v); const w = $("#r-who"); if (w) w.innerHTML = whoLine(s, Math.round(v)); },
     onDone:() => { const v = $("#r-verdict"); if (v){ v.innerHTML = msg; v.classList.add("on"); } }}); }, REDUCED ? 0 : 420); }   // 在已存在的 live 区域里重新赋值，读屏才会播报
@@ -529,7 +553,7 @@ function deepLink(){ const q = new URLSearchParams(location.hash.slice(1)), shot
   REDUCED = true;                                              // 截图模式不放动画，直接给终态
   if (q.get("case")){ S.ci = Math.max(0, Math.min(UI.length-1, +q.get("case"))); $$("#cases button").forEach((x, i) => x.setAttribute("aria-pressed", i === S.ci)); resetAll(); }
   document.body.classList.add("shot", shot.startsWith("kid") ? "shot-kid" : "shot-par"); $(".stage").dataset.show = shot.startsWith("kid") ? "kid" : "parent";
-  const first = cur().sessions.indexOf(sess()[0]), go = {
+  const first = SESS().indexOf(sess()[0]), go = {
     "kid-guess":  () => { S.kid.si = first; kidGuess(); kidGo("guess"); },
     "kid-reveal": () => { S.kid.si = first; S.kid.guess = +(q.get("guess") || 50); kidReveal(); kidGo("reveal"); },
     "kid-friend": () => { kidFriend(sess()[0].f); kidGo("friend"); },
@@ -555,11 +579,14 @@ document.addEventListener("click", e => { const b = e.target.closest("button"); 
   else if (d.act === "talked") openSheet(reasonSheet());
   else if (d.act === "remove") openSheet(removeSheet(d.f));
   else if (d.act === "close") closeSheet();
+  else if (d.act === "pick") $("#rec").click();
   else if (d.act === "delfail"){ S.par.delFail = !S.par.delFail; parent(); kidHome(); const t = $('#p-body [data-act="delfail"]'); t && t.focus({preventScroll:true}); $("#p-body").scrollTop = 1e4; }
   else if (d.reason){ S.par.reason = d.reason; parent(); closeSheet(); }
   else if (d.confirmRemove){ S.par.removed[S.ci + d.confirmRemove] = true; parent(); kidHome(); kidGo("home"); closeSheet(); }
   else if (d.next){ S.par.next = S.par.next === d.next ? null : d.next; parent(); const t = $(`#p-body [data-next="${d.next}"]`); t && t.focus({preventScroll:true});
     const el = $("#p-body"), to = $("#p-body .lbl"); el.scrollTo({top:to ? to.offsetTop - 12 : 0, behavior:REDUCED ? "auto" : "smooth"}); } });
+$("#rec").addEventListener("change", e => { const f = e.target.files[0]; e.target.value = ""; if (f) upload(f); });
+fetch("/api/ping").then(r => r.ok && r.json()).then(d => { if (d && d.ok){ S.live = true; if (S.kid.view === "home") kidHome(); } }).catch(() => {});   // 只有本机服务在，才出现「真录音」入口
 if (!REAL.length) document.body.innerHTML = '<p style="padding:40px;text-align:center">还没有注入真实数据（REAL 为空）。</p>'; else { resetAll(); deepLink(); }
 </script>
 </body>

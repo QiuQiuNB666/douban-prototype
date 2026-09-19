@@ -115,108 +115,6 @@ def find_clap(x):
     return c[0] * HOP / SR, float(s[c[0]])
 
 
-def features(x, vad_db=10.0):
-    """每帧两个数：能量 dB、以本帧为中心 500ms 内的调制深度；外加有声判定。返回 t, E, M, floor, voiced。"""
-    E = frame_db(x)
-    t = (np.arange(len(E)) * HOP + FRAME / 2) / SR
-    lo, hi = np.percentile(windows(np.pad(E, MOD_HALF, mode="edge"), 2 * MOD_HALF + 1), [10, 95], axis=1)
-    floor = float(np.percentile(E[E > SILENT_DB], 10))
-    return t, E, hi - lo, floor, E > floor + vad_db
-
-
-def classify(Z, voiced, t, cA, cB):
-    """按离两个中心的距离判：我 1 / 对方 -1 / 不猜 0。"""
-    dA, dB = np.linalg.norm(Z - cA, axis=1), np.linalg.norm(Z - cB, axis=1)
-    raw = np.where(dA < dB, 1, -1)
-    raw[np.minimum(dA, dB) > np.linalg.norm(cA - cB)] = 0      # 离两边都比两中心还远：不猜
-
-    # 平滑只在有声帧序列上做：A 的音节间隙是无声帧，若算进窗里会把近场帧磨成「不确定」
-    idx = np.flatnonzero(voiced)
-    h = int(round(MEDIAN_S * SR / HOP)) // 2
-    v = np.median(windows(np.pad(raw[idx], h, mode="edge"), 2 * h + 1), axis=1).astype(int)
-    cuts = np.flatnonzero(np.diff(v)) + 1
-    for a, b in zip(np.r_[0, cuts], np.r_[cuts, len(v)]):
-        if v[a] != 0 and t[idx[b - 1]] - t[idx[a]] + HOP / SR < MIN_SEG_S:
-            v[a:b] = 0
-    pred = np.zeros(len(Z), int)
-    pred[idx] = v
-    return pred
-
-
-OPENING_S, RUN_GAP_S, RUN_MIN_S, OPENING_MIN_DB = 30.0, 0.4, 0.8, 3.0
-SEP_WARN_DB, GRAY_WARN, STRIP_BINS = 6.0, 0.30, 120
-
-
-def analyze_free(x, vad_db=10.0):
-    """自由对话：没有拍手，没有固定轮次。给出一起说了多久、各说几成、最长独白。出错抛 ValueError，不 sys.exit。
-    校准先找开头两句（戴设备的人先说，对方后说）；找不到，或第一句不比第二句响，就把有声帧自动分成两堆，更响的一堆算「我」。"""
-    if x.ndim == 2:
-        x = x.mean(1)
-    if x.size < MIN_AUDIO_S * SR:
-        raise ValueError(f"录音只有 {x.size / SR:.1f} 秒，太短了")
-    if np.max(np.abs(x)) < 1e-4:
-        raise ValueError("整段录音几乎是静音：确认传的是正确的文件")
-    t, E, M, floor, voiced = features(x, vad_db)
-    if voiced.sum() < 2 * MIN_SIDE_FRAMES:
-        raise ValueError("这段录音里几乎没有人说话")
-    Z = np.stack([E, M], 1) / np.stack([E, M], 1)[voiced].std(0)
-
-    mode, idx = "auto", np.flatnonzero(voiced & (t < OPENING_S))
-    runs = [r for r in np.split(idx, np.flatnonzero(np.diff(t[idx]) > RUN_GAP_S) + 1) if len(r) * HOP / SR >= RUN_MIN_S]
-    if len(runs) >= 2:
-        a, b = runs[0][:int(CALIB_S * SR / HOP)], runs[1][:int(CALIB_S * SR / HOP)]
-        if E[a].mean() - E[b].mean() >= OPENING_MIN_DB:
-            mode, cA, cB = "opening", Z[a].mean(0), Z[b].mean(0)
-    if mode == "auto":                                  # 两堆：从最响和最轻的五分之一起步，迭代到不动
-        Zv, Ev = Z[voiced], E[voiced]
-        cA, cB = Zv[Ev >= np.percentile(Ev, 80)].mean(0), Zv[Ev <= np.percentile(Ev, 20)].mean(0)
-        for _ in range(20):
-            near = np.linalg.norm(Zv - cA, axis=1) < np.linalg.norm(Zv - cB, axis=1)
-            if near.all() or not near.any():
-                break
-            nA, nB = Zv[near].mean(0), Zv[~near].mean(0)
-            if np.allclose(nA, cA) and np.allclose(nB, cB):
-                break
-            cA, cB = nA, nB
-    pred = classify(Z, voiced, t, cA, cB)
-
-    hop = HOP / SR
-    me, you, gray = float((pred == 1).sum() * hop), float((pred == -1).sum() * hop), float((voiced & (pred == 0)).sum() * hop)
-    if me + you < 5:
-        raise ValueError("能分清是谁在说的部分不到 5 秒，算不出占比")
-    sep = float(np.median(E[pred == 1]) - np.median(E[pred == -1])) if me and you else 0.0
-
-    best, cur, start, last = {1: 0.0, -1: 0.0}, 0, 0.0, 0.0      # 最长独白：同一个人连续说，短于 1 秒的停顿不切断
-    for i in np.flatnonzero(pred != 0):
-        if pred[i] == cur and t[i] - last < MIN_SEG_S:
-            last = t[i]
-            continue
-        if cur:
-            best[cur] = max(best[cur], last - start + hop)
-        cur, start, last = int(pred[i]), t[i], t[i]
-    if cur:
-        best[cur] = max(best[cur], last - start + hop)
-
-    edges = np.linspace(0, len(pred), STRIP_BINS + 1).astype(int)       # 时间线：每格取多数；没人说话是「.」，分不清是「?」
-    strip = ""
-    for a, b in zip(edges[:-1], edges[1:]):
-        p, v = pred[a:b], voiced[a:b]
-        na, nb, ng = (p == 1).sum(), (p == -1).sum(), (v & (p == 0)).sum()
-        strip += "." if max(na, nb, ng) < 0.15 * max(1, b - a) else "A" if na >= max(nb, ng) else "B" if nb >= ng else "?"
-
-    warn = []
-    if mode == "auto":
-        warn.append("没找到开头那两句校准（戴设备的人先说一句、对方再说一句），改用自动分两堆：更响的一堆算「我」。")
-    if min(me, you) < 1:
-        warn.append("几乎只听到一个人在说。")
-    elif sep < SEP_WARN_DB:
-        warn.append(f"两个人在这段录音里差不多响（只差 {sep:.0f} dB），分得不牢，结果只能参考。设备要别在领口，离自己的嘴近。")
-    if gray / (me + you + gray) > GRAY_WARN:
-        warn.append(f"有 {gray / (me + you + gray):.0%} 的说话分不清是谁，没算进去。")
-    return dict(duration=float(t[-1]), me=me, you=you, gray=gray, share=me / (me + you) * 100, sep_db=sep, mode=mode,
-                mono_who="me" if best[1] >= best[-1] else "you", mono=max(best.values()), strip=strip, warnings=warn, pred=pred)
-
-
 def analyze(x, turn=20.0, rounds=4, guard=2.5, lead=1.0, vad_db=10.0, clap=None):
     r = {"corr": None, "margin": None}
     if x.ndim == 2:
@@ -230,8 +128,13 @@ def analyze(x, turn=20.0, rounds=4, guard=2.5, lead=1.0, vad_db=10.0, clap=None)
     if clap is None:
         clap, r["margin"] = find_clap(x)
 
-    t, E, M, floor, voiced = features(x, vad_db)
+    E = frame_db(x)
     n = len(E)
+    t = (np.arange(n) * HOP + FRAME / 2) / SR
+    lo, hi = np.percentile(windows(np.pad(E, MOD_HALF, mode="edge"), 2 * MOD_HALF + 1), [10, 95], axis=1)
+    M = hi - lo
+    floor = float(np.percentile(E[E > SILENT_DB], 10))
+    voiced = E > floor + vad_db
 
     t0 = clap + lead
     end = t0 + 2 * rounds * turn
@@ -257,7 +160,20 @@ def analyze(x, turn=20.0, rounds=4, guard=2.5, lead=1.0, vad_db=10.0, clap=None)
     # 两维单位不同（dB 对 dB 但尺度差很多），按全体有声帧标准差归一，否则距离只由能量决定
     Z = np.stack([E, M], 1) / np.stack([E, M], 1)[voiced].std(0)
     cA, cB = Z[calib(0)].mean(0), Z[calib(1)].mean(0)
-    pred = classify(Z, voiced, t, cA, cB)
+    dA, dB = np.linalg.norm(Z - cA, axis=1), np.linalg.norm(Z - cB, axis=1)
+    raw = np.where(dA < dB, 1, -1)
+    raw[np.minimum(dA, dB) > np.linalg.norm(cA - cB)] = 0      # 离两边都比两中心还远：不猜
+
+    # 平滑只在有声帧序列上做：A 的音节间隙是无声帧，若算进窗里会把近场帧磨成「不确定」
+    idx = np.flatnonzero(voiced)
+    h = int(round(MEDIAN_S * SR / HOP)) // 2
+    v = np.median(windows(np.pad(raw[idx], h, mode="edge"), 2 * h + 1), axis=1).astype(int)
+    cuts = np.flatnonzero(np.diff(v)) + 1
+    for a, b in zip(np.r_[0, cuts], np.r_[cuts, len(v)]):
+        if v[a] != 0 and t[idx[b - 1]] - t[idx[a]] + HOP / SR < MIN_SEG_S:
+            v[a:b] = 0
+    pred = np.zeros(n, int)
+    pred[idx] = v
 
     sc = voiced & (truth != 0)
     tr, pr = truth[sc], pred[sc]
@@ -550,23 +466,9 @@ def cmd_selftest():
     assert fails(analyze, np.zeros(int(30 * SR), np.float32)), "全静音的文件没报错"
     print(f"  8 只录了 60s（缺 {rt['short']:.0f}s）：结论「{verdict(rt)}」；太短/全静音都优雅报错    通过")
 
-    # 9 自由对话模式（没有拍手和轮次）：豆子信号上要和脚本模式逐帧一致；桌上手机要老实说「分得不牢」
-    fb, fp = analyze_free(bead), analyze_free(phone)
-    both = (fb["pred"] != 0) & (rb["pred"] != 0)
-    agree = float((fb["pred"][both] == rb["pred"][both]).mean())
-    assert fb["mode"] == "opening" and agree >= 0.95 and not fb["warnings"], f"自由模式：{fb['mode']}，一致率 {agree:.1%}，提醒 {fb['warnings']}"
-    assert any("分得不牢" in w or "一个人" in w for w in fp["warnings"]), f"桌上手机没给提醒：{fp['warnings']}"
-    for bad in (np.zeros(int(2 * SR), np.float32), np.zeros(int(30 * SR), np.float32)):
-        try:
-            analyze_free(bad); raise AssertionError("太短或全静音没报错")
-        except ValueError:
-            pass
-    print(f"  9 自由对话模式：豆子走「开头两句」校准，与脚本模式一致率 {agree:.1%}，我 {fb['share']:.0f}%；"
-          f"桌上手机提醒「{fp['warnings'][-1][:22]}…」    通过")
-
     dt = time.time() - t_start
-    assert dt < 12, f"自检跑了 {dt:.1f}s，超过 12s"
-    print(f"  10 用时 {dt:.1f}s < 12s    通过")
+    assert dt < 10, f"自检跑了 {dt:.1f}s，超过 10s"
+    print(f"  9 用时 {dt:.1f}s < 10s    通过")
     print("\nOK")
 
 
