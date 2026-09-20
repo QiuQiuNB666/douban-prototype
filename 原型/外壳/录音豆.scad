@@ -130,3 +130,4 @@ module bean(gap = 0, strap = true) {
 }
 
 if (show_bean_model) bean(bean_gap);
+// 注：充电仓.scad 会 include 本文件来取 bean() 和 contact_a
