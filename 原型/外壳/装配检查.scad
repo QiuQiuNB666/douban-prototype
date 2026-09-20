@@ -12,8 +12,7 @@ which = "seat";
 // 豆子在托座里：坐在底板上，磁吸片隔着底板吸在背面
 module bean_in_seat() translate([0, 0, z_cav]) bean(gap = floor_t);
 // 豆子在充电仓座舱里：磁吸片坐在座舱底
-// 绑带是软的，装进去时搭在舱沿上，不参与刚体干涉检查
-module bean_in_case() translate([dock_c[0], dock_c[1], dock_z + plate_t]) rotate(45) bean(gap = 0, strap = false);
+module bean_in_case() translate([dock_c[0], dock_c[1], dock_z + plate_t]) rotate(bean_dir) bean(gap = 0);
 // 豆子在怪兽嘴里：正面朝 -Y，绑带朝上，磁吸片吸在豆子背面；绑带是对折塞进槽里的，不参与检查。
 // 下面三个数要和 不豆.scad 一致（那边是 Hidden 里算出来的）
 monster_y_face = -(46 / 2) - 1.5 + 1;
